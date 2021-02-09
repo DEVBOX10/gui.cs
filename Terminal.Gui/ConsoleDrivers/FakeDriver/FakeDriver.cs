@@ -15,15 +15,12 @@ namespace Terminal.Gui {
 	/// Implements a mock ConsoleDriver for unit testing
 	/// </summary>
 	public class FakeDriver : ConsoleDriver {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 		int cols, rows;
-		/// <summary>
-		/// 
-		/// </summary>
 		public override int Cols => cols;
-		/// <summary>
-		/// 
-		/// </summary>
 		public override int Rows => rows;
+		public override int Top => 0;
+		public override bool HeightAsBuffer { get; set; }
 
 		// The format is rows, columns and 3 values on the last column: Rune, Attribute and Dirty Flag
 		int [,,] contents;
@@ -49,9 +46,6 @@ namespace Terminal.Gui {
 
 		static bool sync = false;
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public FakeDriver ()
 		{
 			cols = FakeConsole.WindowWidth;
@@ -62,11 +56,6 @@ namespace Terminal.Gui {
 		bool needMove;
 		// Current row, and current col, tracked by Move/AddCh only
 		int ccol, crow;
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="col"></param>
-		/// <param name="row"></param>
 		public override void Move (int col, int row)
 		{
 			ccol = col;
@@ -84,10 +73,6 @@ namespace Terminal.Gui {
 
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="rune"></param>
 		public override void AddRune (Rune rune)
 		{
 			rune = MakePrintable (rune);
@@ -113,19 +98,12 @@ namespace Terminal.Gui {
 				UpdateScreen ();
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="str"></param>
 		public override void AddStr (ustring str)
 		{
 			foreach (var rune in str)
 				AddRune (rune);
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public override void End ()
 		{
 			FakeConsole.ResetColor ();
@@ -135,13 +113,13 @@ namespace Terminal.Gui {
 		static Attribute MakeColor (ConsoleColor f, ConsoleColor b)
 		{
 			// Encode the colors into the int value.
-			return new Attribute () { value = ((((int)f) & 0xffff) << 16) | (((int)b) & 0xffff) };
+			return new Attribute (
+				value: ((((int)f) & 0xffff) << 16) | (((int)b) & 0xffff),
+				foreground: (Color)f,
+				background: (Color)b
+				);
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="terminalResized"></param>
 		public override void Init (Action terminalResized)
 		{
 			Colors.TopLevel = new ColorScheme ();
@@ -185,12 +163,6 @@ namespace Terminal.Gui {
 			//MockConsole.Clear ();
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="fore"></param>
-		/// <param name="back"></param>
-		/// <returns></returns>
 		public override Attribute MakeAttribute (Color fore, Color back)
 		{
 			return MakeColor ((ConsoleColor)fore, (ConsoleColor)back);
@@ -211,9 +183,6 @@ namespace Terminal.Gui {
 			}
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public override void UpdateScreen ()
 		{
 			int rows = Rows;
@@ -233,9 +202,6 @@ namespace Terminal.Gui {
 			}
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public override void Refresh ()
 		{
 			int rows = Rows;
@@ -267,43 +233,27 @@ namespace Terminal.Gui {
 			FakeConsole.CursorLeft = savedCol;
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public override void UpdateCursor ()
 		{
 			//
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public override void StartReportingMouseMoves ()
 		{
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public override void StopReportingMouseMoves ()
 		{
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public override void Suspend ()
 		{
 		}
 
 		int currentAttribute;
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="c"></param>
 		public override void SetAttribute (Attribute c)
 		{
-			currentAttribute = c.value;
+			currentAttribute = c.Value;
 		}
 
 		Key MapKey (ConsoleKeyInfo keyInfo)
@@ -417,18 +367,10 @@ namespace Terminal.Gui {
 			return keyMod != Key.Null ? keyMod | key : key;
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="mainLoop"></param>
-		/// <param name="keyHandler"></param>
-		/// <param name="keyDownHandler"></param>
-		/// <param name="keyUpHandler"></param>
-		/// <param name="mouseHandler"></param>
 		public override void PrepareToRun (MainLoop mainLoop, Action<KeyEvent> keyHandler, Action<KeyEvent> keyDownHandler, Action<KeyEvent> keyUpHandler, Action<MouseEvent> mouseHandler)
 		{
 			// Note: Net doesn't support keydown/up events and thus any passed keyDown/UpHandlers will never be called
-			(mainLoop.Driver as NetMainLoop).KeyPressed = delegate (ConsoleKeyInfo consoleKey) {
+			(mainLoop.Driver as FakeMainLoop).KeyPressed = delegate (ConsoleKeyInfo consoleKey) {
 				var map = MapKey (consoleKey);
 				if (map == (Key)0xffffffff)
 					return;
@@ -449,41 +391,33 @@ namespace Terminal.Gui {
 
 				keyHandler (new KeyEvent (map, keyModifiers));
 				keyUpHandler (new KeyEvent (map, keyModifiers));
+				keyModifiers = new KeyModifiers ();
 			};
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="foreground"></param>
-		/// <param name="background"></param>
-		public override void SetColors (ConsoleColor foreground, ConsoleColor background)
+		public override Attribute GetAttribute ()
 		{
-			throw new NotImplementedException ();
+			return currentAttribute;
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="foregroundColorId"></param>
-		/// <param name="backgroundColorId"></param>
+		#region Unused
+		public override void SetColors (ConsoleColor foreground, ConsoleColor background)
+		{
+		}
+
 		public override void SetColors (short foregroundColorId, short backgroundColorId)
 		{
 			throw new NotImplementedException ();
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public override void CookMouse ()
 		{
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
 		public override void UncookMouse ()
 		{
 		}
+		#endregion
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 	}
 }

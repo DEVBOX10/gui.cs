@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Terminal.Gui;
 using Xunit;
 
@@ -23,14 +25,12 @@ namespace Terminal.Gui {
 		public void Init_Shutdown_Cleans_Up ()
 		{
 			Assert.Null (Application.Current);
-			Assert.Null (Application.CurrentView);
 			Assert.Null (Application.Top);
 			Assert.Null (Application.MainLoop);
 			Assert.Null (Application.Driver);
 
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey (true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 			Assert.NotNull (Application.Current);
-			Assert.NotNull (Application.CurrentView);
 			Assert.NotNull (Application.Top);
 			Assert.NotNull (Application.MainLoop);
 			Assert.NotNull (Application.Driver);
@@ -41,7 +41,6 @@ namespace Terminal.Gui {
 
 			Application.Shutdown ();
 			Assert.Null (Application.Current);
-			Assert.Null (Application.CurrentView);
 			Assert.Null (Application.Top);
 			Assert.Null (Application.MainLoop);
 			Assert.Null (Application.Driver);
@@ -66,7 +65,7 @@ namespace Terminal.Gui {
 
 		void Init ()
 		{
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey(true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 			Assert.NotNull (Application.Driver);
 			Assert.NotNull (Application.MainLoop);
 		}
@@ -92,7 +91,6 @@ namespace Terminal.Gui {
 			Application.End (rs);
 
 			Assert.Null (Application.Current);
-			Assert.Null (Application.CurrentView);
 			Assert.NotNull (Application.Top);
 			Assert.NotNull (Application.MainLoop);
 			Assert.NotNull (Application.Driver);
@@ -123,7 +121,6 @@ namespace Terminal.Gui {
 
 			Application.Shutdown ();
 			Assert.Null (Application.Current);
-			Assert.Null (Application.CurrentView);
 			Assert.Null (Application.Top);
 			Assert.Null (Application.MainLoop);
 			Assert.Null (Application.Driver);
@@ -148,7 +145,6 @@ namespace Terminal.Gui {
 
 			Application.Shutdown ();
 			Assert.Null (Application.Current);
-			Assert.Null (Application.CurrentView);
 			Assert.Null (Application.Top);
 			Assert.Null (Application.MainLoop);
 			Assert.Null (Application.Driver);
@@ -207,10 +203,49 @@ namespace Terminal.Gui {
 
 			Application.Shutdown ();
 			Assert.Null (Application.Current);
-			Assert.Null (Application.CurrentView);
 			Assert.Null (Application.Top);
 			Assert.Null (Application.MainLoop);
 			Assert.Null (Application.Driver);
+		}
+
+		[Fact]
+		public void Loaded_Ready_Unlodaded_Events ()
+		{
+			Init ();
+			var top = Application.Top;
+			var count = 0;
+			top.Loaded += () => count++;
+			top.Ready += () => count++;
+			top.Unloaded += () => count++;
+			Application.Iteration = () => Application.RequestStop ();
+			Application.Run ();
+			Application.Shutdown ();
+			Assert.Equal (3, count);
+		}
+
+		[Fact]
+		public void Shutdown_Allows_Async ()
+		{
+			static async Task TaskWithAsyncContinuation ()
+			{
+				await Task.Yield ();
+				await Task.Yield ();
+			}
+
+			Init ();
+			Application.Shutdown ();
+
+			var task = TaskWithAsyncContinuation ();
+			Thread.Sleep (20);
+			Assert.True (task.IsCompletedSuccessfully);
+		}
+
+		[Fact]
+		public void Shutdown_Resets_SyncContext ()
+		{
+			Init ();
+			Application.Shutdown ();
+			Assert.Null (SynchronizationContext.Current);
 		}
 	}
 }

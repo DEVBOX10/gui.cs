@@ -32,6 +32,11 @@ namespace Terminal.Gui {
 		public bool ReadOnly { get; set; } = false;
 
 		/// <summary>
+		/// Changing event, raised before the <see cref="Text"/> changes and can be canceled or changing the new text.
+		/// </summary>
+		public event Action<TextChangingEventArgs> TextChanging;
+
+		/// <summary>
 		///   Changed event, raised when the text has changed.
 		/// </summary>
 		/// <remarks>
@@ -110,8 +115,6 @@ namespace Terminal.Gui {
 			get => base.Frame;
 			set {
 				base.Frame = value;
-				var w = base.Frame.Width;
-				first = point > w ? point - w : 0;
 				Adjust ();
 			}
 		}
@@ -136,7 +139,11 @@ namespace Terminal.Gui {
 				if (oldText == value)
 					return;
 
-				text = TextModel.ToRunes (value);
+				var newText = OnTextChanging (value);
+				if (newText.Cancel) {
+					return;
+				}
+				text = TextModel.ToRunes (newText.NewText);
 				if (!Secret && !isFromHistory) {
 					if (historyText == null)
 						historyText = new List<ustring> () { oldText };
@@ -147,11 +154,10 @@ namespace Terminal.Gui {
 				}
 				TextChanged?.Invoke (oldText);
 
-				if (point > text.Count)
-					point = Math.Max (DisplaySize (text, 0) - 1, 0);
+				if (point > text.Count) {
+					point = Math.Max (TextModel.DisplaySize (text, 0).size - 1, 0);
+				}
 
-				// FIXME: this needs to be updated to use Rune.ColumnWidth
-				//first = point > Frame.Width ? point - Frame.Width : 0;
 				Adjust ();
 				SetNeedsDisplay ();
 			}
@@ -187,7 +193,7 @@ namespace Terminal.Gui {
 				if (idx == point)
 					break;
 				var cols = Rune.ColumnWidth (text [idx]);
-				col = SetCol (col, Frame.Width - 1, cols);
+				col = TextModel.SetCol (col, Frame.Width - 1, cols);
 			}
 			Move (col, 0);
 		}
@@ -203,14 +209,11 @@ namespace Terminal.Gui {
 
 			int p = first;
 			int col = 0;
-			int width = Frame.Width;
+			int width = Frame.Width + OffSetBackground ();
 			var tcount = text.Count;
-			var roc = new Attribute (Color.DarkGray, Color.Gray);
-			for (int idx = 0; idx < tcount; idx++) {
+			var roc = Colors.Menu.Disabled;
+			for (int idx = p; idx < tcount; idx++) {
 				var rune = text [idx];
-				if (idx < p) {
-					continue;
-				}
 				var cols = Rune.ColumnWidth (rune);
 				if (idx == point && HasFocus && !Used && SelectedLength == 0 && !ReadOnly) {
 					Driver.SetAttribute (Colors.Menu.HotFocus);
@@ -222,40 +225,18 @@ namespace Terminal.Gui {
 				if (col + cols <= width) {
 					Driver.AddRune ((Rune)(Secret ? '*' : rune));
 				}
-				col = SetCol (col, width, cols);
+				col = TextModel.SetCol (col, width, cols);
+				if (idx + 1 < tcount && col + Rune.ColumnWidth (text [idx + 1]) > width) {
+					break;
+				}
 			}
 
 			Driver.SetAttribute (ColorScheme.Focus);
-			for (int i = col; i < Frame.Width; i++) {
+			for (int i = col; i < width; i++) {
 				Driver.AddRune (' ');
 			}
 
 			PositionCursor ();
-		}
-
-		static int SetCol (int col, int width, int cols)
-		{
-			if (col + cols <= width) {
-				col += cols;
-			}
-
-			return col;
-		}
-
-		// Returns the size in a range of the string.
-		int DisplaySize (List<Rune> t, int start = -1, int end = -1)
-		{
-			if (t == null || t.Count == 0) {
-				return 0;
-			}
-			int size = 0;
-			int tcount = end == -1 ? t.Count : end > t.Count ? t.Count : end;
-			int i = start == -1 ? 0 : start;
-			for (; i < tcount; i++) {
-				var rune = t [i];
-				size += Rune.ColumnWidth (rune);
-			}
-			return size;
 		}
 
 		void Adjust ()
@@ -264,10 +245,10 @@ namespace Terminal.Gui {
 			if (point < first) {
 				first = point;
 			} else if (first + point - (Frame.Width + offB) == 0 ||
-				  DisplaySize (text, first, point) >= Frame.Width + offB) {
-				first = Math.Max (CalculateFirst (text, first, point, Frame.Width - 1 + offB), 0);
+				  TextModel.DisplaySize (text, first, point).size >= Frame.Width + offB) {
+				first = Math.Max (TextModel.CalculateLeftColumn (text, first,
+					point, Frame.Width - 1 + offB, point), 0);
 			}
-
 			SetNeedsDisplay ();
 		}
 
@@ -279,26 +260,6 @@ namespace Terminal.Gui {
 			}
 
 			return offB;
-		}
-
-		int CalculateFirst (List<Rune> t, int start, int end, int width)
-		{
-			if (start + end - width >= width) {
-				return end - width;
-			}
-			int size = 0;
-			int tcount = end > width || end > t.Count - 1 ? t.Count - 1 : end;
-			int col = 0;
-			for (int i = tcount; i > -1; i--) {
-				var rune = t [i];
-				var s = Rune.ColumnWidth (rune);
-				size += s;
-				if (size > width) {
-					col += size - width;
-					break;
-				}
-			}
-			return col + start;
 		}
 
 		void SetText (List<Rune> newText)
@@ -349,6 +310,7 @@ namespace Terminal.Gui {
 			var oldCursorPos = point;
 
 			switch (ShortcutHelper.GetModifiersKey (kb)) {
+			case Key.Delete:
 			case Key.DeleteChar:
 			case Key.D | Key.CtrlMask:
 				if (ReadOnly)
@@ -366,7 +328,6 @@ namespace Terminal.Gui {
 				}
 				break;
 
-			case Key.Delete:
 			case Key.Backspace:
 				if (ReadOnly)
 					return true;
@@ -396,7 +357,7 @@ namespace Terminal.Gui {
 			case Key.End | Key.ShiftMask:
 			case Key.End | Key.ShiftMask | Key.CtrlMask:
 			case Key.E | Key.ShiftMask | Key.CtrlMask:
-				if (point < text.Count) {
+				if (point <= text.Count) {
 					int x = point;
 					point = text.Count;
 					PrepareSelection (x, point - x);
@@ -429,19 +390,21 @@ namespace Terminal.Gui {
 			case Key.CursorLeft | Key.ShiftMask | Key.CtrlMask:
 			case Key.CursorUp | Key.ShiftMask | Key.CtrlMask:
 				if (point > 0) {
-					int x = start > -1 ? start : point;
-					int sbw = WordBackward (point);
-					if (sbw != -1)
-						point = sbw;
-					PrepareSelection (x, sbw - x);
+					int x = start > -1 && start > point ? start : point;
+					if (x > 0) {
+						int sbw = WordBackward (x);
+						if (sbw != -1)
+							point = sbw;
+						PrepareSelection (x, sbw - x);
+					}
 				}
 				break;
 
 			case Key.CursorRight | Key.ShiftMask | Key.CtrlMask:
 			case Key.CursorDown | Key.ShiftMask | Key.CtrlMask:
 				if (point < text.Count) {
-					int x = start > -1 ? start : point;
-					int sfw = WordForward (point);
+					int x = start > -1 && start > point ? start : point;
+					int sfw = WordForward (x);
 					if (sfw != -1)
 						point = sfw;
 					PrepareSelection (x, sfw - x);
@@ -757,7 +720,7 @@ namespace Terminal.Gui {
 		{
 			// We could also set the cursor position.
 			int x;
-			var pX = GetPointFromX (text, first, ev.X);
+			var pX = TextModel.GetColFromX (text, first, ev.X);
 			if (text.Count == 0) {
 				x = pX - ev.OfX;
 			} else {
@@ -770,7 +733,7 @@ namespace Terminal.Gui {
 		{
 			int pX = x;
 			if (getX) {
-				pX = GetPointFromX (text, first, x);
+				pX = TextModel.GetColFromX (text, first, x);
 			}
 			if (first + pX > text.Count) {
 				point = text.Count;
@@ -783,23 +746,6 @@ namespace Terminal.Gui {
 			return point;
 		}
 
-		int GetPointFromX (List<Rune> t, int start, int x)
-		{
-			if (x < 0) {
-				return x;
-			}
-			int size = start;
-			var pX = x + start;
-			for (int i = start; i < t.Count; i++) {
-				var r = t [i];
-				size += Rune.ColumnWidth (r);
-				if (i == pX || (size > pX)) {
-					return i - start;
-				}
-			}
-			return t.Count - start;
-		}
-
 		void PrepareSelection (int x, int direction = 0)
 		{
 			x = x + first < 0 ? 0 : x;
@@ -807,12 +753,15 @@ namespace Terminal.Gui {
 			if (SelectedStart > -1) {
 				SelectedLength = x + direction <= text.Count ? x + direction - SelectedStart : text.Count - SelectedStart;
 				SetSelectedStartSelectedLength ();
-				SelectedText = length > 0 ? ustring.Make (text).ToString ().Substring (
-					start < 0 ? 0 : start, length > text.Count ? text.Count : length) : "";
-				if (first > start) {
-					first = start;
+				if (start > -1) {
+					SelectedText = length > 0 ? ustring.Make (text).ToString ().Substring (
+						start < 0 ? 0 : start, length > text.Count ? text.Count : length) : "";
+					if (first > start) {
+						first = start;
+					}
+				} else {
+					ClearAllSelection ();
 				}
-				point = start + length;
 			}
 			Adjust ();
 		}
@@ -828,6 +777,7 @@ namespace Terminal.Gui {
 			SelectedLength = 0;
 			SelectedText = "";
 			start = 0;
+			length = 0;
 			SetNeedsDisplay ();
 		}
 
@@ -871,11 +821,14 @@ namespace Terminal.Gui {
 			ustring actualText = Text;
 			int selStart = SelectedLength < 0 ? SelectedLength + SelectedStart : SelectedStart;
 			int selLength = Math.Abs (SelectedLength);
-			Text = actualText[0, selStart] +
-				actualText[selStart + selLength, actualText.RuneCount - selLength];
+			(var _, var len) = TextModel.DisplaySize (text, 0, selStart, false);
+			(var _, var len2) = TextModel.DisplaySize (text, selStart, selStart + selLength, false);
+			(var _, var len3) = TextModel.DisplaySize (text, selStart + selLength, actualText.RuneCount, false);
+			Text = actualText[0, len] +
+				actualText[len + len2, len + len2 + len3];
 			ClearAllSelection ();
-			CursorPosition = selStart >= Text.RuneCount ? Text.RuneCount : selStart;
-			SetNeedsDisplay ();
+			point = selStart >= Text.RuneCount ? Text.RuneCount : selStart;
+			Adjust ();
 		}
 
 		/// <summary>
@@ -883,20 +836,58 @@ namespace Terminal.Gui {
 		/// </summary>
 		public virtual void Paste ()
 		{
-			if (ReadOnly)
+			if (ReadOnly) {
 				return;
+			}
 
+			SetSelectedStartSelectedLength ();
+			int selStart = start == -1 ? CursorPosition : start;
 			ustring actualText = Text;
-			int start = SelectedStart == -1 ? CursorPosition : SelectedStart;
+			(int _, int len) = TextModel.DisplaySize (text, 0, selStart, false);
+			(var _, var len2) = TextModel.DisplaySize (text, selStart, selStart + length, false);
+			(var _, var len3) = TextModel.DisplaySize (text, selStart + length, actualText.RuneCount, false);
 			ustring cbTxt = Clipboard.Contents ?? "";
-			Text = actualText[0, start] +
+			Text = actualText [0, len] +
 				cbTxt +
-				actualText[start + SelectedLength, actualText.RuneCount - SelectedLength];
-			point = start + cbTxt.RuneCount;
-			SelectedLength = 0;
+				actualText [len + len2, len + len2 + len3];
+			point = selStart + cbTxt.RuneCount;
 			ClearAllSelection ();
 			SetNeedsDisplay ();
 		}
 
+		/// <summary>
+		/// Virtual method that invoke the <see cref="TextChanging"/> event if it's defined.
+		/// </summary>
+		/// <param name="newText">The new text to be replaced.</param>
+		/// <returns>Returns the <see cref="TextChangingEventArgs"/></returns>
+		public virtual TextChangingEventArgs OnTextChanging (ustring newText)
+		{
+			var ev = new TextChangingEventArgs (newText);
+			TextChanging?.Invoke (ev);
+			return ev;
+		}
+	}
+
+	/// <summary>
+	/// An <see cref="EventArgs"/> which allows passing a cancelable new text value event.
+	/// </summary>
+	public class TextChangingEventArgs : EventArgs {
+		/// <summary>
+		/// The new text to be replaced.
+		/// </summary>
+		public ustring NewText { get; set; }
+		/// <summary>
+		/// Flag which allows to cancel the new text value.
+		/// </summary>
+		public bool Cancel { get; set; }
+
+		/// <summary>
+		/// Initializes a new instance of <see cref="TextChangingEventArgs"/>
+		/// </summary>
+		/// <param name="newText">The new <see cref="TextField.Text"/> to be replaced.</param>
+		public TextChangingEventArgs (ustring newText)
+		{
+			NewText = newText;
+		}
 	}
 }

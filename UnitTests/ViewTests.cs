@@ -6,7 +6,7 @@ using System.Linq;
 using Terminal.Gui;
 using Xunit;
 
-// Alais Console to MockConsole so we don't accidentally use Console
+// Alias Console to MockConsole so we don't accidentally use Console
 using Console = Terminal.Gui.FakeConsole;
 
 namespace Terminal.Gui {
@@ -27,9 +27,9 @@ namespace Terminal.Gui {
 			Assert.Null (r.ColorScheme);
 			Assert.Equal (Dim.Sized (0), r.Width);
 			Assert.Equal (Dim.Sized (0), r.Height);
-			// BUGBUG: Pos needs eqality implemented
-			//Assert.Equal (Pos.At (0), r.X);
-			//Assert.Equal (Pos.At (0), r.Y);
+			// FIXED: Pos needs equality implemented
+			Assert.Equal (Pos.At (0), r.X);
+			Assert.Equal (Pos.At (0), r.Y);
 			Assert.False (r.IsCurrentTop);
 			Assert.Empty (r.Id);
 			Assert.Empty (r.Subviews);
@@ -544,7 +544,7 @@ namespace Terminal.Gui {
 		[Fact]
 		public void Initialized_Event_Comparing_With_Added_Event ()
 		{
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey (true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 
 			var t = new Toplevel () { Id = "0", };
 
@@ -643,7 +643,7 @@ namespace Terminal.Gui {
 		[Fact]
 		public void Initialized_Event_Will_Be_Invoked_When_Added_Dynamically ()
 		{
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey (true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 
 			var t = new Toplevel () { Id = "0", };
 
@@ -751,7 +751,7 @@ namespace Terminal.Gui {
 		[Fact]
 		public void CanFocus_Faced_With_Container_Before_Run ()
 		{
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey (true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 
 			var t = Application.Top;
 
@@ -788,7 +788,7 @@ namespace Terminal.Gui {
 		[Fact]
 		public void CanFocus_Faced_With_Container_After_Run ()
 		{
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey (true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 
 			var t = Application.Top;
 
@@ -831,7 +831,7 @@ namespace Terminal.Gui {
 		[Fact]
 		public void CanFocus_Container_ToFalse_Turns_All_Subviews_ToFalse_Too ()
 		{
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey (true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 
 			var t = Application.Top;
 
@@ -866,7 +866,7 @@ namespace Terminal.Gui {
 		[Fact]
 		public void CanFocus_Container_Toggling_All_Subviews_To_Old_Value_When_Is_True ()
 		{
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey (true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 
 			var t = Application.Top;
 
@@ -910,7 +910,7 @@ namespace Terminal.Gui {
 		{
 			// Non-regression test for #882 (NullReferenceException during keyboard navigation when Focused is null)
 
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey (true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 
 			Application.Top.Ready += () => {
 				Assert.Null (Application.Top.Focused);
@@ -928,7 +928,7 @@ namespace Terminal.Gui {
 		[Fact]
 		public void Multi_Thread_Toplevels ()
 		{
-			Application.Init (new FakeDriver (), new NetMainLoop (() => FakeConsole.ReadKey (true)));
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 
 			var t = Application.Top;
 			var w = new Window ();
@@ -1076,6 +1076,38 @@ namespace Terminal.Gui {
 			Assert.Equal (4, view.Height);
 			Assert.True (view.Frame.IsEmpty);
 			Assert.True (view.Bounds.IsEmpty);
+		}
+
+		[Fact]
+		public void FocusNearestView_Ensure_Focus_Ordered ()
+		{
+			var top = new Toplevel ();
+
+			var win = new Window ();
+			var winSubview = new View ("WindowSubview") {
+				CanFocus = true
+			};
+			win.Add (winSubview);
+			top.Add (win);
+
+			var frm = new FrameView ();
+			var frmSubview = new View ("FrameSubview") {
+				CanFocus = true
+			};
+			frm.Add (frmSubview);
+			top.Add (frm);
+
+			top.ProcessKey (new KeyEvent (Key.Tab, new KeyModifiers ()));
+			Assert.Equal ($"WindowSubview", top.MostFocused.Text);
+			top.ProcessKey (new KeyEvent (Key.Tab, new KeyModifiers ()));
+			Assert.Equal ("FrameSubview", top.MostFocused.Text);
+			top.ProcessKey (new KeyEvent (Key.Tab, new KeyModifiers ()));
+			Assert.Equal ($"WindowSubview", top.MostFocused.Text);
+
+			top.ProcessKey (new KeyEvent (Key.BackTab | Key.ShiftMask, new KeyModifiers ()));
+			Assert.Equal ("FrameSubview", top.MostFocused.Text);
+			top.ProcessKey (new KeyEvent (Key.BackTab | Key.ShiftMask, new KeyModifiers ()));
+			Assert.Equal ($"WindowSubview", top.MostFocused.Text);
 		}
 	}
 }
