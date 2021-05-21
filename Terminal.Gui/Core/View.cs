@@ -8,7 +8,7 @@
 //   - "Colors" type or "Attributes" type?
 //   - What to surface as "BackgroundCOlor" when clearing a window, an attribute or colors?
 //
-// Optimziations
+// Optimizations
 //   - Add rendering limitation to the exposed area
 using System;
 using System.Collections;
@@ -47,9 +47,9 @@ namespace Terminal.Gui {
 	/// </para>
 	/// <para>
 	///    Views supports two layout styles: Absolute or Computed. The choice as to which layout style is used by the View 
-	///    is determined when the View is initizlied. To create a View using Absolute layout, call a constructor that takes a
+	///    is determined when the View is initialized. To create a View using Absolute layout, call a constructor that takes a
 	///    Rect parameter to specify the absolute position and size (the <c>View.<see cref="Frame "/></c>)/. To create a View 
-	///    using Computed layout use a constructor that does not take a Rect parametr and set the X, Y, Width and Height 
+	///    using Computed layout use a constructor that does not take a Rect parameter and set the X, Y, Width and Height 
 	///    properties on the view. Both approaches use coordinates that are relative to the container they are being added to. 
 	/// </para>
 	/// <para>
@@ -69,7 +69,7 @@ namespace Terminal.Gui {
 	/// </para>
 	/// <para>
 	///    Absolute layout requires specifying coordinates and sizes of Views explicitly, and the
-	///    View will typcialy stay in a fixed position and size. To change the position and size use the
+	///    View will typically stay in a fixed position and size. To change the position and size use the
 	///    <see cref="Frame"/> property.
 	/// </para>
 	/// <para>
@@ -463,7 +463,7 @@ namespace Terminal.Gui {
 		Pos x, y;
 
 		/// <summary>
-		/// Gets or sets the X position for the view (the column). Only used whe <see cref="LayoutStyle"/> is <see cref="LayoutStyle.Computed"/>.
+		/// Gets or sets the X position for the view (the column). Only used the <see cref="LayoutStyle"/> is <see cref="LayoutStyle.Computed"/>.
 		/// </summary>
 		/// <value>The X Position.</value>
 		/// <remarks>
@@ -478,12 +478,16 @@ namespace Terminal.Gui {
 
 				x = value;
 				SetNeedsLayout ();
+				if (x is Pos.PosAbsolute) {
+					frame = new Rect (x.Anchor (0), frame.Y, frame.Width, frame.Height);
+				}
+				textFormatter.Size = frame.Size;
 				SetNeedsDisplay (frame);
 			}
 		}
 
 		/// <summary>
-		/// Gets or sets the Y position for the view (the row). Only used whe <see cref="LayoutStyle"/> is <see cref="LayoutStyle.Computed"/>.
+		/// Gets or sets the Y position for the view (the row). Only used the <see cref="LayoutStyle"/> is <see cref="LayoutStyle.Computed"/>.
 		/// </summary>
 		/// <value>The y position (line).</value>
 		/// <remarks>
@@ -498,6 +502,10 @@ namespace Terminal.Gui {
 
 				y = value;
 				SetNeedsLayout ();
+				if (y is Pos.PosAbsolute) {
+					frame = new Rect (frame.X, y.Anchor (0), frame.Width, frame.Height);
+				}
+				textFormatter.Size = frame.Size;
 				SetNeedsDisplay (frame);
 			}
 		}
@@ -505,7 +513,7 @@ namespace Terminal.Gui {
 		Dim width, height;
 
 		/// <summary>
-		/// Gets or sets the width of the view. Only used whe <see cref="LayoutStyle"/> is <see cref="LayoutStyle.Computed"/>.
+		/// Gets or sets the width of the view. Only used the <see cref="LayoutStyle"/> is <see cref="LayoutStyle.Computed"/>.
 		/// </summary>
 		/// <value>The width.</value>
 		/// <remarks>
@@ -520,12 +528,16 @@ namespace Terminal.Gui {
 
 				width = value;
 				SetNeedsLayout ();
+				if (width is Dim.DimAbsolute) {
+					frame = new Rect (frame.X, frame.Y, width.Anchor (0), frame.Height);
+				}
+				textFormatter.Size = frame.Size;
 				SetNeedsDisplay (frame);
 			}
 		}
 
 		/// <summary>
-		/// Gets or sets the height of the view. Only used whe <see cref="LayoutStyle"/> is <see cref="LayoutStyle.Computed"/>.
+		/// Gets or sets the height of the view. Only used the <see cref="LayoutStyle"/> is <see cref="LayoutStyle.Computed"/>.
 		/// </summary>
 		/// <value>The height.</value>
 		/// If <see cref="LayoutStyle"/> is <see cref="LayoutStyle.Absolute"/> changing this property has no effect and its value is indeterminate. 
@@ -538,6 +550,10 @@ namespace Terminal.Gui {
 
 				height = value;
 				SetNeedsLayout ();
+				if (height is Dim.DimAbsolute) {
+					frame = new Rect (frame.X, frame.Y, frame.Width, height.Anchor (0));
+				}
+				textFormatter.Size = frame.Size;
 				SetNeedsDisplay (frame);
 			}
 		}
@@ -567,18 +583,12 @@ namespace Terminal.Gui {
 		/// </summary>
 		/// <param name="frame">The region covered by this view.</param>
 		/// <remarks>
-		/// This constructor intitalize a View with a <see cref="LayoutStyle"/> of <see cref="LayoutStyle.Absolute"/>. Use <see cref="View()"/> to 
+		/// This constructor initialize a View with a <see cref="LayoutStyle"/> of <see cref="LayoutStyle.Absolute"/>. Use <see cref="View()"/> to 
 		/// initialize a View with  <see cref="LayoutStyle"/> of <see cref="LayoutStyle.Computed"/> 
 		/// </remarks>
 		public View (Rect frame)
 		{
-			textFormatter = new TextFormatter ();
-			this.Text = ustring.Empty;
-
-			shortcutHelper = new ShortcutHelper ();
-
-			this.Frame = frame;
-			LayoutStyle = LayoutStyle.Absolute;
+			Initialize (ustring.Empty, frame, LayoutStyle.Absolute, TextDirection.LeftRight_TopBottom);
 		}
 
 		/// <summary>
@@ -595,12 +605,11 @@ namespace Terminal.Gui {
 		///   If <c>Height</c> is greater than one, word wrapping is provided.
 		/// </para>
 		/// <para>
-		///   This constructor intitalize a View with a <see cref="LayoutStyle"/> of <see cref="LayoutStyle.Computed"/>. 
+		///   This constructor initialize a View with a <see cref="LayoutStyle"/> of <see cref="LayoutStyle.Computed"/>. 
 		///   Use <see cref="X"/>, <see cref="Y"/>, <see cref="Width"/>, and <see cref="Height"/> properties to dynamically control the size and location of the view.
 		/// </para>
 		/// </remarks>
-		public View () : this (text: string.Empty) { }
-
+		public View () : this (text: string.Empty, direction: TextDirection.LeftRight_TopBottom) { }
 
 		/// <summary>
 		///   Initializes a new instance of <see cref="View"/> using <see cref="LayoutStyle.Absolute"/> layout.
@@ -635,12 +644,9 @@ namespace Terminal.Gui {
 		/// </remarks>
 		/// <param name="rect">Location.</param>
 		/// <param name="text">text to initialize the <see cref="Text"/> property with.</param>
-		public View (Rect rect, ustring text) : this (rect)
+		public View (Rect rect, ustring text)
 		{
-			textFormatter = new TextFormatter ();
-			this.Text = text;
-
-			shortcutHelper = new ShortcutHelper ();
+			Initialize (text, rect, LayoutStyle.Absolute);
 		}
 
 		/// <summary>
@@ -657,23 +663,39 @@ namespace Terminal.Gui {
 		/// </para>
 		/// </remarks>
 		/// <param name="text">text to initialize the <see cref="Text"/> property with.</param>
-		public View (ustring text)
+		/// <param name="direction">The text direction.</param>
+		public View (ustring text, TextDirection direction = TextDirection.LeftRight_TopBottom)
+		{
+			Initialize (text, Rect.Empty, LayoutStyle.Computed, direction);
+		}
+
+		void Initialize (ustring text, Rect rect, LayoutStyle layoutStyle = LayoutStyle.Computed,
+			TextDirection direction = TextDirection.LeftRight_TopBottom)
 		{
 			textFormatter = new TextFormatter ();
-			Text = text;
+			TextDirection = direction;
 
 			shortcutHelper = new ShortcutHelper ();
 
 			CanFocus = false;
 			TabIndex = -1;
 			TabStop = false;
-			LayoutStyle = LayoutStyle.Computed;
+			LayoutStyle = layoutStyle;
 			// BUGBUG: CalcRect doesn't account for line wrapping
-			var r = TextFormatter.CalcRect (0, 0, text);
-			x = Pos.At (0);
-			y = Pos.At (0);
+			Rect r;
+			if (rect.IsEmpty) {
+				r = TextFormatter.CalcRect (0, 0, text, direction);
+			} else {
+				r = rect;
+			}
+			x = Pos.At (r.X);
+			y = Pos.At (r.Y);
 			Width = r.Width;
 			Height = r.Height;
+
+			Frame = r;
+
+			Text = text;
 		}
 
 		/// <summary>
@@ -1022,7 +1044,7 @@ namespace Terminal.Gui {
 		/// <summary>
 		/// Sets the <see cref="ConsoleDriver"/>'s clip region to the current View's <see cref="Bounds"/>.
 		/// </summary>
-		/// <returns>The existing driver's clip region, which can be then re-eapplied by setting <c><see cref="Driver"/>.Clip</c> (<see cref="ConsoleDriver.Clip"/>).</returns>
+		/// <returns>The existing driver's clip region, which can be then re-applied by setting <c><see cref="Driver"/>.Clip</c> (<see cref="ConsoleDriver.Clip"/>).</returns>
 		/// <remarks>
 		/// <see cref="Bounds"/> is View-relative.
 		/// </remarks>
@@ -1084,7 +1106,7 @@ namespace Terminal.Gui {
 		/// <summary>
 		/// Utility function to draw strings that contains a hotkey using a <see cref="ColorScheme"/> and the "focused" state.
 		/// </summary>
-		/// <param name="text">String to display, the underscoore before a letter flags the next letter as the hotkey.</param>
+		/// <param name="text">String to display, the underscore before a letter flags the next letter as the hotkey.</param>
 		/// <param name="focused">If set to <c>true</c> this uses the focused colors from the color scheme, otherwise the regular ones.</param>
 		/// <param name="scheme">The color scheme to use.</param>
 		public void DrawHotString (ustring text, bool focused, ColorScheme scheme)
@@ -1458,6 +1480,9 @@ namespace Terminal.Gui {
 			KeyPress?.Invoke (args);
 			if (args.Handled)
 				return true;
+			Focused?.KeyPress?.Invoke (args);
+			if (args.Handled)
+				return true;
 			if (Focused?.ProcessKey (keyEvent) == true)
 				return true;
 
@@ -1470,6 +1495,11 @@ namespace Terminal.Gui {
 			KeyEventEventArgs args = new KeyEventEventArgs (keyEvent);
 			KeyPress?.Invoke (args);
 			if (args.Handled)
+				return true;
+			Focused?.KeyPress?.Invoke (args);
+			if (args.Handled)
+				return true;
+			if (Focused?.ProcessKey (keyEvent) == true)
 				return true;
 			if (subviews == null || subviews.Count == 0)
 				return false;
@@ -1485,6 +1515,11 @@ namespace Terminal.Gui {
 			KeyEventEventArgs args = new KeyEventEventArgs (keyEvent);
 			KeyPress?.Invoke (args);
 			if (args.Handled)
+				return true;
+			Focused?.KeyPress?.Invoke (args);
+			if (args.Handled)
+				return true;
+			if (Focused?.ProcessKey (keyEvent) == true)
 				return true;
 			if (subviews == null || subviews.Count == 0)
 				return false;
@@ -1747,7 +1782,7 @@ namespace Terminal.Gui {
 			var result = new List<View> ();
 
 			// Set of all nodes with no incoming edges
-			var S = new HashSet<View> (nodes.Where (n => edges.All (e => e.To.Equals (n) == false)));
+			var S = new HashSet<View> (nodes.Where (n => edges.All (e => !e.To.Equals (n))));
 
 			while (S.Any ()) {
 				//  remove a node n from S
@@ -1766,15 +1801,15 @@ namespace Terminal.Gui {
 					edges.Remove (e);
 
 					// if m has no other incoming edges then
-					if (edges.All (me => me.To.Equals (m) == false) && m != this?.SuperView) {
+					if (edges.All (me => !me.To.Equals (m)) && m != this?.SuperView) {
 						// insert m into S
 						S.Add (m);
 					}
 				}
 			}
 
-			if (edges.Any ()) {
-				if (!object.ReferenceEquals (edges.First ().From, edges.First ().To)) {
+			if (edges.Any () && edges.First ().From != Application.Top) {
+				if (!ReferenceEquals (edges.First ().From, edges.First ().To)) {
 					throw new InvalidOperationException ($"TopologicalSort (for Pos/Dim) cannot find {edges.First ().From}. Did you forget to add it to {this}?");
 				} else {
 					throw new InvalidOperationException ("TopologicalSort encountered a recursive cycle in the relative Pos/Dim in the views of " + this);
@@ -1857,19 +1892,59 @@ namespace Terminal.Gui {
 			var nodes = new HashSet<View> ();
 			var edges = new HashSet<(View, View)> ();
 
-			foreach (var v in InternalSubviews) {
-				nodes.Add (v);
-				if (v.LayoutStyle == LayoutStyle.Computed) {
-					if (v.X is Pos.PosView vX)
-						edges.Add ((vX.Target, v));
-					if (v.Y is Pos.PosView vY)
-						edges.Add ((vY.Target, v));
-					if (v.Width is Dim.DimView vWidth)
-						edges.Add ((vWidth.Target, v));
-					if (v.Height is Dim.DimView vHeight)
-						edges.Add ((vHeight.Target, v));
+			void CollectPos (Pos pos, View from, ref HashSet<View> nNodes, ref HashSet<(View, View)> nEdges)
+			{
+				if (pos is Pos.PosView pv) {
+					if (pv.Target != this) {
+						nEdges.Add ((pv.Target, from));
+					}
+					foreach (var v in from.InternalSubviews) {
+						CollectAll (v, ref nNodes, ref nEdges);
+					}
+					return;
+				}
+				if (pos is Pos.PosCombine pc) {
+					foreach (var v in from.InternalSubviews) {
+						CollectPos (pc.left, from, ref nNodes, ref nEdges);
+						CollectPos (pc.right, from, ref nNodes, ref nEdges);
+					}
 				}
 			}
+
+			void CollectDim (Dim dim, View from, ref HashSet<View> nNodes, ref HashSet<(View, View)> nEdges)
+			{
+				if (dim is Dim.DimView dv) {
+					if (dv.Target != this) {
+						nEdges.Add ((dv.Target, from));
+					}
+					foreach (var v in from.InternalSubviews) {
+						CollectAll (v, ref nNodes, ref nEdges);
+					}
+					return;
+				}
+				if (dim is Dim.DimCombine dc) {
+					foreach (var v in from.InternalSubviews) {
+						CollectDim (dc.left, from, ref nNodes, ref nEdges);
+						CollectDim (dc.right, from, ref nNodes, ref nEdges);
+					}
+				}
+			}
+
+			void CollectAll (View from, ref HashSet<View> nNodes, ref HashSet<(View, View)> nEdges)
+			{
+				foreach (var v in from.InternalSubviews) {
+					nNodes.Add (v);
+					if (v.layoutStyle != LayoutStyle.Computed) {
+						continue;
+					}
+					CollectPos (v.X, v, ref nNodes, ref nEdges);
+					CollectPos (v.Y, v, ref nNodes, ref nEdges);
+					CollectDim (v.Width, v, ref nNodes, ref nEdges);
+					CollectDim (v.Height, v, ref nNodes, ref nEdges);
+				}
+			}
+
+			CollectAll (this, ref nodes, ref edges);
 
 			var ordered = TopologicalSort (nodes, edges);
 
@@ -1880,7 +1955,6 @@ namespace Terminal.Gui {
 
 				v.LayoutSubviews ();
 				v.LayoutNeeded = false;
-
 			}
 
 			if (SuperView == Application.Top && LayoutNeeded && ordered.Count == 0 && LayoutStyle == LayoutStyle.Computed) {
@@ -1915,6 +1989,9 @@ namespace Terminal.Gui {
 			set {
 				textFormatter.Text = value;
 				ResizeView (autoSize);
+				if (textFormatter.Size != Bounds.Size) {
+					textFormatter.Size = Bounds.Size;
+				}
 				SetNeedsLayout ();
 				SetNeedsDisplay ();
 			}
@@ -1930,8 +2007,10 @@ namespace Terminal.Gui {
 			get => autoSize;
 			set {
 				var v = ResizeView (value);
+				textFormatter.AutoSize = v;
 				if (autoSize != v) {
 					autoSize = v;
+					textFormatter.NeedsFormat = true;
 					SetNeedsLayout ();
 					SetNeedsDisplay ();
 				}
@@ -1947,6 +2026,39 @@ namespace Terminal.Gui {
 			set {
 				textFormatter.Alignment = value;
 				SetNeedsDisplay ();
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets how the View's <see cref="Text"/> is aligned verticaly when drawn. Changing this property will redisplay the <see cref="View"/>.
+		/// </summary>
+		/// <value>The text alignment.</value>
+		public virtual VerticalTextAlignment VerticalTextAlignment {
+			get => textFormatter.VerticalAlignment;
+			set {
+				textFormatter.VerticalAlignment = value;
+				SetNeedsDisplay ();
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets the direction of the View's <see cref="Text"/>. Changing this property will redisplay the <see cref="View"/>.
+		/// </summary>
+		/// <value>The text alignment.</value>
+		public virtual TextDirection TextDirection {
+			get => textFormatter.Direction;
+			set {
+				if (textFormatter.Direction != value) {
+					textFormatter.Direction = value;
+					if (IsInitialized && AutoSize) {
+						ResizeView (true);
+					} else if (IsInitialized) {
+						var b = new Rect (Bounds.X, Bounds.Y, Bounds.Height, Bounds.Width);
+						SetWidthHeight (b);
+					}
+					textFormatter.Size = Bounds.Size;
+					SetNeedsDisplay ();
+				}
 			}
 		}
 
@@ -1967,27 +2079,38 @@ namespace Terminal.Gui {
 
 		bool ResizeView (bool autoSize)
 		{
-			var aSize = autoSize;
-			if (textFormatter.Size != Bounds.Size && (((width == null || width is Dim.DimAbsolute) && (Bounds.Width == 0
-				|| autoSize && Bounds.Width != textFormatter.Size.Width))
-				|| ((height == null || height is Dim.DimAbsolute) && (Bounds.Height == 0
-				|| autoSize && Bounds.Height != textFormatter.Size.Height)))) {
-				Bounds = new Rect (Bounds.X, Bounds.Y, textFormatter.Size.Width, textFormatter.Size.Height);
-				if (width == null) {
-					width = Bounds.Width;
-				} else if (width is Dim.DimAbsolute) {
-					width = Math.Max (Bounds.Width, height.Anchor (Bounds.Width));
-				} else {
-					aSize = false;
-				}
-				if (height == null) {
-					height = Bounds.Height;
-				} else if (height is Dim.DimAbsolute) {
-					height = Math.Max (Bounds.Height, height.Anchor (Bounds.Height));
-				} else {
-					aSize = false;
-				}
+			if (!autoSize) {
+				return false;
 			}
+
+			var aSize = autoSize;
+			Rect nBounds = TextFormatter.CalcRect (Bounds.X, Bounds.Y, Text, textFormatter.Direction);
+
+			if ((textFormatter.Size != Bounds.Size || textFormatter.Size != nBounds.Size)
+				&& (((width == null || width is Dim.DimAbsolute) && (Bounds.Width == 0
+				|| autoSize && Bounds.Width != nBounds.Width))
+				|| ((height == null || height is Dim.DimAbsolute) && (Bounds.Height == 0
+				|| autoSize && Bounds.Height != nBounds.Height)))) {
+				aSize = SetWidthHeight (nBounds);
+			}
+			return aSize;
+		}
+
+		bool SetWidthHeight (Rect nBounds)
+		{
+			bool aSize;
+			var canSizeW = SetWidth (nBounds.Width, out int rW);
+			var canSizeH = SetHeight (nBounds.Height, out int rH);
+			if (canSizeW && canSizeH) {
+				aSize = true;
+				Bounds = nBounds;
+				width = rW;
+				height = rH;
+				textFormatter.Size = Bounds.Size;
+			} else {
+				aSize = false;
+			}
+
 			return aSize;
 		}
 
@@ -2062,7 +2185,6 @@ namespace Terminal.Gui {
 				return true;
 			if (MouseEvent (mouseEvent))
 				return true;
-
 
 			if (mouseEvent.Flags == MouseFlags.Button1Clicked) {
 				if (CanFocus && !HasFocus && SuperView != null) {
@@ -2144,19 +2266,15 @@ namespace Terminal.Gui {
 			return true;
 		}
 
-		/// <summary>
-		/// Calculate the width based on the <see cref="Width"/> settings.
-		/// </summary>
-		/// <param name="desiredWidth">The desired width.</param>
-		/// <param name="resultWidth">The real result width.</param>
-		/// <returns>True if the width can be directly assigned, false otherwise.</returns>
-		public bool SetWidth (int desiredWidth, out int resultWidth)
+		bool CanSetWidth (int desiredWidth, out int resultWidth, out int currentWidth)
 		{
 			int w = desiredWidth;
+			currentWidth = Width != null ? Width.Anchor (0) : 0;
 			bool canSetWidth;
 			if (Width is Dim.DimCombine || Width is Dim.DimView || Width is Dim.DimFill) {
 				// It's a Dim.DimCombine and so can't be assigned. Let it have it's width anchored.
 				w = Width.Anchor (w);
+				currentWidth = Width.Anchor (w);
 				canSetWidth = false;
 			} else if (Width is Dim.DimFactor factor) {
 				// Tries to get the SuperView width otherwise the view width.
@@ -2165,6 +2283,7 @@ namespace Terminal.Gui {
 					sw -= Frame.X;
 				}
 				w = Width.Anchor (sw);
+				currentWidth = Width.Anchor (sw);
 				canSetWidth = false;
 			} else {
 				canSetWidth = true;
@@ -2174,19 +2293,15 @@ namespace Terminal.Gui {
 			return canSetWidth;
 		}
 
-		/// <summary>
-		/// Calculate the height based on the <see cref="Height"/> settings.
-		/// </summary>
-		/// <param name="desiredHeight">The desired height.</param>
-		/// <param name="resultHeight">The real result height.</param>
-		/// <returns>True if the height can be directly assigned, false otherwise.</returns>
-		public bool SetHeight (int desiredHeight, out int resultHeight)
+		bool CanSetHeight (int desiredHeight, out int resultHeight, out int currentHeight)
 		{
 			int h = desiredHeight;
+			currentHeight = Height != null ? Height.Anchor (0) : 0;
 			bool canSetHeight;
 			if (Height is Dim.DimCombine || Height is Dim.DimView || Height is Dim.DimFill) {
 				// It's a Dim.DimCombine and so can't be assigned. Let it have it's height anchored.
 				h = Height.Anchor (h);
+				currentHeight = Height.Anchor (h);
 				canSetHeight = false;
 			} else if (Height is Dim.DimFactor factor) {
 				// Tries to get the SuperView height otherwise the view height.
@@ -2195,6 +2310,7 @@ namespace Terminal.Gui {
 					sh -= Frame.Y;
 				}
 				h = Height.Anchor (sh);
+				currentHeight = Height.Anchor (sh);
 				canSetHeight = false;
 			} else {
 				canSetHeight = true;
@@ -2202,6 +2318,48 @@ namespace Terminal.Gui {
 			resultHeight = h;
 
 			return canSetHeight;
+		}
+
+		/// <summary>
+		/// Calculate the width based on the <see cref="Width"/> settings.
+		/// </summary>
+		/// <param name="desiredWidth">The desired width.</param>
+		/// <param name="resultWidth">The real result width.</param>
+		/// <returns><c>true</c> if the width can be directly assigned, <c>false</c> otherwise.</returns>
+		public bool SetWidth (int desiredWidth, out int resultWidth)
+		{
+			return CanSetWidth (desiredWidth, out resultWidth, out _);
+		}
+
+		/// <summary>
+		/// Calculate the height based on the <see cref="Height"/> settings.
+		/// </summary>
+		/// <param name="desiredHeight">The desired height.</param>
+		/// <param name="resultHeight">The real result height.</param>
+		/// <returns><c>true</c> if the height can be directly assigned, <c>false</c> otherwise.</returns>
+		public bool SetHeight (int desiredHeight, out int resultHeight)
+		{
+			return CanSetHeight (desiredHeight, out resultHeight, out _);
+		}
+
+		/// <summary>
+		/// Gets the current width based on the <see cref="Width"/> settings.
+		/// </summary>
+		/// <param name="currentWidth">The real current width.</param>
+		/// <returns><c>true</c> if the width can be directly assigned, <c>false</c> otherwise.</returns>
+		public bool GetCurrentWidth (out int currentWidth)
+		{
+			return CanSetWidth (0, out _, out currentWidth);
+		}
+
+		/// <summary>
+		/// Calculate the height based on the <see cref="Height"/> settings.
+		/// </summary>
+		/// <param name="currentHeight">The real current height.</param>
+		/// <returns><c>true</c> if the height can be directly assigned, <c>false</c> otherwise.</returns>
+		public bool GetCurrentHeight (out int currentHeight)
+		{
+			return CanSetHeight (0, out _, out currentHeight);
 		}
 	}
 }

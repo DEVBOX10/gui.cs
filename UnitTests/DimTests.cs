@@ -11,7 +11,7 @@ using Xunit;
 // Alais Console to MockConsole so we don't accidentally use Console
 using Console = Terminal.Gui.FakeConsole;
 
-namespace Terminal.Gui {
+namespace Terminal.Gui.Core {
 	public class DimTests {
 		public DimTests ()
 		{
@@ -483,6 +483,10 @@ namespace Terminal.Gui {
 				Assert.Equal (1, v3.Frame.Height); // 1 because is Dim.DimAbsolute
 
 				v4.Text = "Button4";
+				v4.AutoSize = false;
+				Assert.Equal ("Dim.Absolute(50)", v4.Width.ToString ());
+				Assert.Equal ("Dim.Absolute(1)", v4.Height.ToString ());
+				v4.AutoSize = true;
 				Assert.Equal ("Dim.Absolute(11)", v4.Width.ToString ());
 				Assert.Equal ("Dim.Absolute(1)", v4.Height.ToString ());
 				Assert.Equal (11, v4.Frame.Width); // 11 is the text length and because is Dim.DimAbsolute
@@ -507,6 +511,195 @@ namespace Terminal.Gui {
 			Application.Shutdown ();
 		}
 
-		// TODO: Test operators
+		// DONE: Test operators
+		[Fact]
+		public void DimCombine_Do_Not_Throws ()
+		{
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+			var t = Application.Top;
+
+			var w = new Window ("w") {
+				Width = Dim.Width (t) - 2,
+				Height = Dim.Height (t) - 2
+			};
+			var f = new FrameView ("f");
+			var v1 = new View ("v1") {
+				Width = Dim.Width (w) - 2,
+				Height = Dim.Height (w) - 2
+			};
+			var v2 = new View ("v2") {
+				Width = Dim.Width (v1) - 2,
+				Height = Dim.Height (v1) - 2
+			};
+
+			f.Add (v1, v2);
+			w.Add (f);
+			t.Add (w);
+
+			f.Width = Dim.Width (t) - Dim.Width (v2);
+			f.Height = Dim.Height (t) - Dim.Height (v2);
+
+			t.Ready += () => {
+				Assert.Equal (80, t.Frame.Width);
+				Assert.Equal (25, t.Frame.Height);
+				Assert.Equal (78, w.Frame.Width);
+				Assert.Equal (23, w.Frame.Height);
+				Assert.Equal (6, f.Frame.Width);
+				Assert.Equal (6, f.Frame.Height);
+				Assert.Equal (76, v1.Frame.Width);
+				Assert.Equal (21, v1.Frame.Height);
+				Assert.Equal (74, v2.Frame.Width);
+				Assert.Equal (19, v2.Frame.Height);
+			};
+
+			Application.Iteration += () => Application.RequestStop ();
+
+			Application.Run ();
+			Application.Shutdown ();
+		}
+
+		[Fact]
+		public void PosCombine_Will_Throws ()
+		{
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+			var t = Application.Top;
+
+			var w = new Window ("w") {
+				Width = Dim.Width (t) - 2,
+				Height = Dim.Height (t) - 2
+			};
+			var f = new FrameView ("f");
+			var v1 = new View ("v1") {
+				Width = Dim.Width (w) - 2,
+				Height = Dim.Height (w) - 2
+			};
+			var v2 = new View ("v2") {
+				Width = Dim.Width (v1) - 2,
+				Height = Dim.Height (v1) - 2
+			};
+
+			f.Add (v1); // v2 not added
+			w.Add (f);
+			t.Add (w);
+
+			f.Width = Dim.Width (t) - Dim.Width (v2);
+			f.Height = Dim.Height (t) - Dim.Height (v2);
+
+			Assert.Throws<InvalidOperationException> (() => Application.Run ());
+			Application.Shutdown ();
+		}
+
+
+		[Fact]
+		public void Dim_Add_Operator ()
+		{
+
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+			var top = Application.Top;
+
+			var view = new View () { X = 0, Y = 0, Width = 20, Height = 0 };
+			var field = new TextField () { X = 0, Y = Pos.Bottom (view), Width = 20 };
+			var count = 0;
+
+			field.KeyDown += (k) => {
+				if (k.KeyEvent.Key == Key.Enter) {
+					field.Text = $"Label {count}";
+					var label = new Label (field.Text) { X = 0, Y = view.Bounds.Height, Width = 20 };
+					view.Add (label);
+					Assert.Equal ($"Label {count}", label.Text);
+					Assert.Equal ($"Pos.Absolute({count})", label.Y.ToString ());
+
+					Assert.Equal ($"Dim.Absolute({count})", view.Height.ToString ());
+					view.Height += 1;
+					count++;
+					Assert.Equal ($"Dim.Absolute({count})", view.Height.ToString ());
+				}
+			};
+
+			Application.Iteration += () => {
+				while (count < 20) {
+					field.OnKeyDown (new KeyEvent (Key.Enter, new KeyModifiers ()));
+				}
+
+				Application.RequestStop ();
+			};
+
+			var win = new Window ();
+			win.Add (view);
+			win.Add (field);
+
+			top.Add (win);
+
+			Application.Run (top);
+
+			Assert.Equal (20, count);
+
+			// Shutdown must be called to safely clean up Application if Init has been called
+			Application.Shutdown ();
+		}
+
+		[Fact]
+		public void Dim_Subtract_Operator ()
+		{
+
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+			var top = Application.Top;
+
+			var view = new View () { X = 0, Y = 0, Width = 20, Height = 0 };
+			var field = new TextField () { X = 0, Y = Pos.Bottom (view), Width = 20 };
+			var count = 20;
+			var listLabels = new List<Label> ();
+
+			for (int i = 0; i < count; i++) {
+				field.Text = $"Label {i}";
+				var label = new Label (field.Text) { X = 0, Y = view.Bounds.Height, Width = 20 };
+				view.Add (label);
+				Assert.Equal ($"Label {i}", label.Text);
+				Assert.Equal ($"Pos.Absolute({i})", label.Y.ToString ());
+				listLabels.Add (label);
+
+				Assert.Equal ($"Dim.Absolute({i})", view.Height.ToString ());
+				view.Height += 1;
+				Assert.Equal ($"Dim.Absolute({i + 1})", view.Height.ToString ());
+			}
+
+			field.KeyDown += (k) => {
+				if (k.KeyEvent.Key == Key.Enter) {
+					Assert.Equal ($"Label {count - 1}", listLabels [count - 1].Text);
+					view.Remove (listLabels [count - 1]);
+
+					Assert.Equal ($"Dim.Absolute({count})", view.Height.ToString ());
+					view.Height -= 1;
+					count--;
+					Assert.Equal ($"Dim.Absolute({count})", view.Height.ToString ());
+				}
+			};
+
+			Application.Iteration += () => {
+				while (count > 0) {
+					field.OnKeyDown (new KeyEvent (Key.Enter, new KeyModifiers ()));
+				}
+
+				Application.RequestStop ();
+			};
+
+			var win = new Window ();
+			win.Add (view);
+			win.Add (field);
+
+			top.Add (win);
+
+			Application.Run (top);
+
+			Assert.Equal (0, count);
+
+			// Shutdown must be called to safely clean up Application if Init has been called
+			Application.Shutdown ();
+
+		}
 	}
 }

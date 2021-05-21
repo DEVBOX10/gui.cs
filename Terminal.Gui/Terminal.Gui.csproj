@@ -1,27 +1,159 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType></DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DefineConstants>TRACE;DEBUG_IDISPOSABLE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="true" />
+    <PackageReference Include="NStack.Core" Version="0.16.0" />
+    <PackageReference Include="MinVer" Version="2.5.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <!-- <None Remove="ConsoleDrivers\#ConsoleDriver.cs#" /> -->
+  </ItemGroup>
+
   <PropertyGroup>
+    <!-- See Terminal.Gui/README.md for how version numbering works -->
+    <!-- This enables prefixing version tags with v, e.g. v1.0.0 Instead of 1.0.0 -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+
     <TargetFrameworks>net472;netstandard2.0;net5.0</TargetFrameworks>
     <RootNamespace>Terminal.Gui</RootNamespace>
     <AssemblyName>Terminal.Gui</AssemblyName>
     <DocumentationFile>bin\Release\Terminal.Gui.xml</DocumentationFile>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
-    <!-- moved to ../Directory.Build.props -->
-    <!-- <AssemblyVersion>0.89.0.0</AssemblyVersion> -->
-  </PropertyGroup>
-  <PropertyGroup>
     <GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
     <PackageId>Terminal.Gui</PackageId>
-    <!-- moved to ../Directory.Build.props -->
-    <!-- <PackageVersion>0.89</PackageVersion> -->
-    <!-- <Authors>Miguel de Icaza, Charlie Kindel (@tig), @BDisp</Authors> -->
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/migueldeicaza/gui.cs/</PackageProjectUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageTags>csharp, terminal, c#, f#, gui, toolkit, console</PackageTags>
     <Description>Console user interface toolkit for .NET applications.</Description>
     <Owners>Miguel de Icaza</Owners>
     <Summary>Application framework for creating modern console applications using .NET</Summary>
     <Title>Terminal.Gui is a framework for creating console user interfaces</Title>
+
     <PackageReleaseNotes>
+      v1.1.2
+      * testing
+
+      v1.1.1
+      * Fixes #1307 - MainLoop timeouts duplicate keys error.
+
+      v1.1.0
+      * TextView CursorLeft/CursorRight change focus when at start/end #1271
+      * Fixes #1273 - Add direction summaries
+      * Fixes #1276 - Added TextDirection constructor to View and Label and improving AutoSize
+      * Fixes #1272 - Fixes Linux/Mac window sizing
+      * Fixes #1281 - Fixed CursesDriver colors. Added BasicColors scenario
+      * Fixes #1266 - Using Ctrl+PageUp/PageDown to allowing navigate through windows.
+      * TableView - adds last column dividing line #1289
+      * Fixes #1291. Combining two PosAbsolute or two DimAbsolute result on a PosAbsolute or DimAbsolute
+      * Changed Console.WriteLine to ITestOutputHelper in tests #1305
+
+      v1.0.0
+      * Version 1.0 Release!!! - Thank you to @migueldeicaza, @tig, @bdisp, @tznind, @jmprricone, and many more!
+
+      v1.0.0-rc.13
+      * NEW CONTROL: GraphView - thanks @tznind!
+      * Fixes #1256 - OutConsoleGridView no longer works - ENTER does not work
+
+      v1.0.0-rc.12
+      * Fixes #1257 - ListView's ProcessKey should return false if no OpenSelectedItem handler is defined
+
+      v1.0.0-rc.10
+      * Fixes #931. Fixed the limit 25 lines issue
+      * Fixes #1251. Fixes TextValidateProvider exception on the All View Tester scenario.
+
+      v1.0.0-rc.9
+      * Fixes #1210. Added AllowsReturn, AllowsTab and Multiline into the TextView.
+      * Fixes #1241. Added SendKeys feature to the ConsoleDriver.
+      * Fixes #418 and #931. Unix terminal hangs after exit.
+
+      v1.0.0-rc.7
+      * Added TextValidateField - Enables masked and validated text input. Thanks @jmperricone!
+      * Refactored TreeView and TabView to reduce api surface area
+      * Added code coverage reporting
+
+      v1.0.0-rc.1
+      * Added Dependabot support and updated dependencies
+      * Renamed master branch to main
+      * Fixes #1211. Added support to TextView for word based operations Ctrl+Del and Ctrl+Backspace
+      * Fixes #1208. Now the selected text is overwritten if SelectedStart is greater than CursorPosition.
+      * Fixes #1206. NetDriver now print the selected text. Attribute struct now create a valid Value for the current driver. Insert key is detected by NetDriver.
+      * Fixes #1202. CheckBox now deals with a functional '_' underscore hotkey.
+      * Fixes #1199. Normalize views constructors and did some typo fixing.
+      * Fixes #1197. Prevents width negative value if added directly to the A
+      * Added Vertical Alignment and Text Direction + UICatalog Demo (thanks @jmprricone!)
+      * Fixes #1193. A non auto size default Button now preserves his width and thus the text alignment now work.
+      * Fixes #1187. Prevents WordBackward throwing an exception if point is greater than the text length
+      * Fixes #1185. Button click is only processed if there are no mouse mov
+      * Fixes #1183. ListView now return true on the handled keys
+      * Fixes #1179. TextView does not copy to the clipboard on deleting
+      * Fixes #1177. Now is possible to copy or cut on the TextView with the...
+      * Fixes #1175. demo.cs editor now implement "Copy", "Cut" and "Paste".
+      * Fixes #1173. TextField only need to handle a single line.
+      * Fixes #1171. Delete and Backspace now deletes the selected text
+      * Fixes #1167. Application.Run method with #DEBUG can be simplified.
+      * Fixes #1165. Changing the directory name label or the field name crashes
+      * Fixes #1159. Dialog must have a default button if none is provided.
+
+      v1.0.0-beta.11
+      * NEW CONTROL: Tabview - thanks @tznind!
+      * UI Catalog now shows correct Terminal.gui.dll version
+      * Fixes #939 - README sample does not compile - thanks @buzzfrog!
+      * Fixes #1154 - FileDialog blank constructor results in unstable window
+      * Fixes #1155 - MoveForward/MoveBackward not bound on Text controls.
+      * Fixes #1152 - Generic TreeView`1 breaks upon selection in All Views Tester)
+      * Fixes #1148 - TextFormatter.Format does not keep the end spaces on wrapped text.
+      * Fixes #134 - (HUGE) TextView: Add line wrapping.
+      * Fixes #1145 - ScrollBar down arrow is not showing.
+      * Fixes #1143 - Cannot change the MenuBar's background color.
+      * Fixes #1141 - Cannot change the StatusBar's background color.
+      * Fixes #1048 - BrighCyan to BrightCyan spelling
+      * Fixes #1130 - Broken Table/TreeView links in docs.
+
+      v1.0.0-beta.8
+      * Now using MinVer to generate version numbers from git tags.
+      * Updated publish-to-nuget to work with minver
+
+      v1.0.0-pre.9
+      * NEW CONTROL: TreeView - Thanks @tznind!
+      * Fixes #1066. View sizing across the various terminals has been fixed; works in Windows Terminal again - thanks @bdisp
+      * Fixes #1117. Newfile Modal.
+
+      v1.0.0-pre.8
+      * NOTE: Windows Terminal is broken - see #1099
+      * NEW CONTROL: TableView - Thanks @tznind!
+      * NetDriver is signficantly imporved - thanks @bdisp!
+      * Fixes #1016. Window is drawing its frame over the menu.
+      * Fixes #1018. Since childNeedsDisplay is used outside the View class it must to be a property.
+      * Fixes #1024. TextView is printing theFixes #1030. Getting colors from the Attributes of a ColorScheme. new line character "\n" with a symbol
+      * Fixes #1030. Getting colors from the Attributes of a ColorScheme.
+      * Fixes #1034. The NuGet packages need to be updated.
+      * Fixes #1043. The menu separator is being printed in the wrong place.
+      * Fixes #93. Audit TextView just like we did TextField to ensure proper treatment of Unicode.
+      * Fixes #1050. ScrollView takes too long to scroll enormous content size.
+      * BREAKING CHANGE - Fixes #1052. Application.CurrentView looks unused.
+      * Fixes #1053. ProcessMouseEvent seems to initialize MouseEvent incorrectly.
+      * Fixes #1056. Window doesn't redraw his SuperView properly.
+      * Fixes #1061. ComputerLayout scenario does not drawn correctly.
+      * Added unhandled exception handling in Application.Run (#1063)
+      * Fixes #1068. The ResizeView doesn't handle the AutoSize properly.
+      * Fixes #1071. Toplevel.GetTopLevelSubviews (). Changed from HashSet to IList.
+      * Fixes #1073, #1058, #480 #1049. Provides more automation to the ScrollBarView, allowing easily implement on any view.
+      * Application.Shutdown() does not reset SynchronizationContext (#1085).
+      * Fixes #1088. On WindowsDriver moving the mouse with a button pressed, when it is released, the button clicked event is fired, causing an unintentional event.
+      * Fixes #1091. Continuous button pressed not working properly on Linux.
+      * Fixes #1100. TextFormatter doesn't handle ColumnWidth greater than 1.
+      * Cursor shape and visibility #1102
+
       v1.0.0-pre.6
       * If StatusBar.Visible is set to false, TopLevel resizes correctly enabling hiding/showing of a StatusBar. UICatalog demonstrates.
       * New sample/demo app - ReactiveExample - Shows how to use reactive extensions and ReactiveUI with gui.cs. (Thanks @worldbeater)
@@ -144,37 +276,4 @@
       * Fixes #838. Added a Visible property to the View. (Thanks @bidsp!)
     </PackageReleaseNotes>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType></DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>TRACE;DEBUG_IDISPOSABLE</DefineConstants>
-  </PropertyGroup>
-
-  <!--<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net472|AnyCPU'">
-    <DefineConstants>TRACE</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG_IDISPOSABLE</DefineConstants>
-  </PropertyGroup>-->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="true" />
-    <PackageReference Include="NStack.Core" Version="0.16.0" />
-  </ItemGroup>
-  <!--<ItemGroup>
-    <Reference Include="NStack">
-      <HintPath>..\..\..\Users\miguel\.nuget\packages\nstack.core\0.14.0\lib\netstandard2.0\NStack.dll</HintPath>
-    </Reference>
-  </ItemGroup>-->
-  <ItemGroup>
-    <None Remove="ConsoleDrivers\#ConsoleDriver.cs#" />
-  </ItemGroup>
 </Project>

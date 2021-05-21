@@ -291,6 +291,9 @@ namespace Terminal.Gui {
 		void ShowHideScrollBars ()
 		{
 			if (!hosted || (hosted && !autoHideScrollBars)) {
+				if (contentBottomRightCorner != null && contentBottomRightCorner.Visible) {
+					contentBottomRightCorner.Visible = false;
+				}
 				return;
 			}
 
@@ -312,6 +315,8 @@ namespace Terminal.Gui {
 				if (Application.mouseGrabView != null && Application.mouseGrabView == this) {
 					Application.UngrabMouse ();
 				}
+			} else {
+				contentBottomRightCorner.Visible = false;
 			}
 			if (showScrollIndicator) {
 				Redraw (Bounds);
@@ -657,6 +662,14 @@ namespace Terminal.Gui {
 			return isVertical ?
 				(KeepContentAlwaysInViewport ? Host.Bounds.Height + (showBothScrollIndicator ? -2 : -1) : 0) :
 				(KeepContentAlwaysInViewport ? Host.Bounds.Width + (showBothScrollIndicator ? -2 : -1) : 0);
+		}
+
+		///<inheritdoc/>
+		public override bool OnEnter (View view)
+		{
+			Application.Driver.SetCursorVisibility (CursorVisibility.Invisible);
+
+			return base.OnEnter (view);
 		}
 	}
 }

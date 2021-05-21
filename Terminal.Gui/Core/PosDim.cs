@@ -36,7 +36,7 @@ namespace Terminal.Gui {
 			return 0;
 		}
 
-		class PosFactor : Pos {
+		internal class PosFactor : Pos {
 			float factor;
 
 			public PosFactor (float n)
@@ -82,7 +82,7 @@ namespace Terminal.Gui {
 
 		static PosAnchorEnd endNoMargin;
 
-		class PosAnchorEnd : Pos {
+		internal class PosAnchorEnd : Pos {
 			int n;
 
 			public PosAnchorEnd (int n)
@@ -205,8 +205,8 @@ namespace Terminal.Gui {
 			return new PosAbsolute (n);
 		}
 
-		class PosCombine : Pos {
-			Pos left, right;
+		internal class PosCombine : Pos {
+			internal Pos left, right;
 			bool add;
 			public PosCombine (bool add, Pos left, Pos right)
 			{
@@ -242,13 +242,12 @@ namespace Terminal.Gui {
 		/// <returns>The <see cref="Pos"/> that is the sum of the values of <c>left</c> and <c>right</c>.</returns>
 		public static Pos operator + (Pos left, Pos right)
 		{
-			PosCombine newPos = new PosCombine (true, left, right);
-			if (posCombine?.ToString () != newPos.ToString ()) {
-				var view = left as PosView;
-				if (view != null) {
-					view.Target.SetNeedsLayout ();
-				}
+			if (left is PosAbsolute && right is PosAbsolute) {
+				posCombine = null;
+				return new PosAbsolute (left.Anchor (0) + right.Anchor (0));
 			}
+			PosCombine newPos = new PosCombine (true, left, right);
+			SetPosCombine (left, newPos);
 			return posCombine = newPos;
 		}
 
@@ -260,13 +259,23 @@ namespace Terminal.Gui {
 		/// <returns>The <see cref="Pos"/> that is the <c>left</c> minus <c>right</c>.</returns>
 		public static Pos operator - (Pos left, Pos right)
 		{
+			if (left is PosAbsolute && right is PosAbsolute) {
+				posCombine = null;
+				return new PosAbsolute (left.Anchor (0) - right.Anchor (0));
+			}
 			PosCombine newPos = new PosCombine (false, left, right);
+			SetPosCombine (left, newPos);
+			return posCombine = newPos;
+		}
+
+		static void SetPosCombine (Pos left, PosCombine newPos)
+		{
 			if (posCombine?.ToString () != newPos.ToString ()) {
 				var view = left as PosView;
-				if (view != null)
+				if (view != null) {
 					view.Target.SetNeedsLayout ();
+				}
 			}
-			return posCombine = newPos;
 		}
 
 		internal class PosView : Pos {
@@ -500,7 +509,7 @@ namespace Terminal.Gui {
 		}
 
 		internal class DimCombine : Dim {
-			Dim left, right;
+			internal Dim left, right;
 			bool add;
 			public DimCombine (bool add, Dim left, Dim right)
 			{
@@ -526,6 +535,8 @@ namespace Terminal.Gui {
 
 		}
 
+		static DimCombine dimCombine;
+
 		/// <summary>
 		/// Adds a <see cref="Terminal.Gui.Dim"/> to a <see cref="Terminal.Gui.Dim"/>, yielding a new <see cref="Dim"/>.
 		/// </summary>
@@ -534,7 +545,13 @@ namespace Terminal.Gui {
 		/// <returns>The <see cref="Dim"/> that is the sum of the values of <c>left</c> and <c>right</c>.</returns>
 		public static Dim operator + (Dim left, Dim right)
 		{
-			return new DimCombine (true, left, right);
+			if (left is DimAbsolute && right is DimAbsolute) {
+				dimCombine = null;
+				return new DimAbsolute (left.Anchor (0) + right.Anchor (0));
+			}
+			DimCombine newDim = new DimCombine (true, left, right);
+			SetDimCombine (left, newDim);
+			return dimCombine = newDim;
 		}
 
 		/// <summary>
@@ -545,7 +562,23 @@ namespace Terminal.Gui {
 		/// <returns>The <see cref="Dim"/> that is the <c>left</c> minus <c>right</c>.</returns>
 		public static Dim operator - (Dim left, Dim right)
 		{
-			return new DimCombine (false, left, right);
+			if (left is DimAbsolute && right is DimAbsolute) {
+				dimCombine = null;
+				return new DimAbsolute (left.Anchor (0) - right.Anchor (0));
+			}
+			DimCombine newDim = new DimCombine (false, left, right);
+			SetDimCombine (left, newDim);
+			return dimCombine = newDim;
+		}
+
+		static void SetDimCombine (Dim left, DimCombine newPos)
+		{
+			if (dimCombine?.ToString () != newPos.ToString ()) {
+				var view = left as DimView;
+				if (view != null) {
+					view.Target.SetNeedsLayout ();
+				}
+			}
 		}
 
 		internal class DimView : Dim {

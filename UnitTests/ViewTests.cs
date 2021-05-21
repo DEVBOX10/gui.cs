@@ -9,7 +9,7 @@ using Xunit;
 // Alias Console to MockConsole so we don't accidentally use Console
 using Console = Terminal.Gui.FakeConsole;
 
-namespace Terminal.Gui {
+namespace Terminal.Gui.Views {
 	public class ViewTests {
 		[Fact]
 		public void New_Initializes ()
@@ -37,6 +37,7 @@ namespace Terminal.Gui {
 			Assert.False (r.WantMousePositionReports);
 			Assert.Null (r.SuperView);
 			Assert.Null (r.MostFocused);
+			Assert.Equal (TextDirection.LeftRight_TopBottom, r.TextDirection);
 
 			// Empty Rect
 			r = new View (Rect.Empty);
@@ -49,10 +50,10 @@ namespace Terminal.Gui {
 			Assert.Equal (new Rect (0, 0, 0, 0), r.Frame);
 			Assert.Null (r.Focused);
 			Assert.Null (r.ColorScheme);
-			Assert.Null (r.Height);
-			Assert.Null (r.Height);
-			Assert.Null (r.X);
-			Assert.Null (r.Y);
+			Assert.NotNull (r.Width);       // All view Dim are initialized now,
+			Assert.NotNull (r.Height);      // avoiding Dim errors.
+			Assert.NotNull (r.X);           // All view Pos are initialized now,
+			Assert.NotNull (r.Y);           // avoiding Pos errors.
 			Assert.False (r.IsCurrentTop);
 			Assert.Empty (r.Id);
 			Assert.Empty (r.Subviews);
@@ -60,6 +61,7 @@ namespace Terminal.Gui {
 			Assert.False (r.WantMousePositionReports);
 			Assert.Null (r.SuperView);
 			Assert.Null (r.MostFocused);
+			Assert.Equal (TextDirection.LeftRight_TopBottom, r.TextDirection);
 
 			// Rect with values
 			r = new View (new Rect (1, 2, 3, 4));
@@ -72,10 +74,10 @@ namespace Terminal.Gui {
 			Assert.Equal (new Rect (1, 2, 3, 4), r.Frame);
 			Assert.Null (r.Focused);
 			Assert.Null (r.ColorScheme);
-			Assert.Null (r.Height);
-			Assert.Null (r.Height);
-			Assert.Null (r.X);
-			Assert.Null (r.Y);
+			Assert.NotNull (r.Width);
+			Assert.NotNull (r.Height);
+			Assert.NotNull (r.X);
+			Assert.NotNull (r.Y);
 			Assert.False (r.IsCurrentTop);
 			Assert.Empty (r.Id);
 			Assert.Empty (r.Subviews);
@@ -83,6 +85,31 @@ namespace Terminal.Gui {
 			Assert.False (r.WantMousePositionReports);
 			Assert.Null (r.SuperView);
 			Assert.Null (r.MostFocused);
+			Assert.Equal (TextDirection.LeftRight_TopBottom, r.TextDirection);
+
+			// Initializes a view with a vertical direction
+			r = new View ("Vertical View", TextDirection.TopBottom_LeftRight);
+			Assert.NotNull (r);
+			Assert.Equal (LayoutStyle.Computed, r.LayoutStyle);
+			Assert.Equal ("View()({X=0,Y=0,Width=1,Height=13})", r.ToString ());
+			Assert.False (r.CanFocus);
+			Assert.False (r.HasFocus);
+			Assert.Equal (new Rect (0, 0, 1, 13), r.Bounds);
+			Assert.Equal (new Rect (0, 0, 1, 13), r.Frame);
+			Assert.Null (r.Focused);
+			Assert.Null (r.ColorScheme);
+			Assert.NotNull (r.Width);       // All view Dim are initialized now,
+			Assert.NotNull (r.Height);      // avoiding Dim errors.
+			Assert.NotNull (r.X);           // All view Pos are initialized now,
+			Assert.NotNull (r.Y);           // avoiding Pos errors.
+			Assert.False (r.IsCurrentTop);
+			Assert.Empty (r.Id);
+			Assert.Empty (r.Subviews);
+			Assert.False (r.WantContinuousButtonPressed);
+			Assert.False (r.WantMousePositionReports);
+			Assert.Null (r.SuperView);
+			Assert.Null (r.MostFocused);
+			Assert.Equal (TextDirection.TopBottom_LeftRight, r.TextDirection);
 
 		}
 
@@ -945,10 +972,10 @@ namespace Terminal.Gui {
 				if (count1 == 5) {
 					log1 = true;
 				}
-				if (count1 > 13 && count < 15) {
+				if (count1 == 14 && count2 == 10 && count == 15) { // count2 is already stopped
 					fromTopStillKnowFirstIsRunning = true;
 				}
-				if (count2 > 6 && count2 < 8) {
+				if (count1 == 7 && count2 == 7 && count == 8) {
 					fromTopStillKnowSecondIsRunning = true;
 				}
 				if (count == 30) {
@@ -974,7 +1001,7 @@ namespace Terminal.Gui {
 
 			void FirstDialogToplevel ()
 			{
-				var od = new OpenDialog();
+				var od = new OpenDialog ();
 				od.Ready += SecoundDialogToplevel;
 
 				Application.MainLoop.AddTimeout (TimeSpan.FromMilliseconds (100), (_) => {
@@ -982,7 +1009,7 @@ namespace Terminal.Gui {
 					if (count2 == 5) {
 						log2 = true;
 					}
-					if (count2 > 3 && count2 < 5) {
+					if (count2 == 4 && count1 == 5 && count == 5) {
 						fromFirstStillKnowSecondIsRunning = true;
 					}
 					if (count1 == 20) {
@@ -1021,7 +1048,7 @@ namespace Terminal.Gui {
 		}
 
 		[Fact]
-		public void View_Difference_Between_An_Object_Initializer_And_A_Constructor ()
+		public void View_With_No_Difference_Between_An_Object_Initializer_And_A_Constructor ()
 		{
 			// Object Initializer
 			var view = new View () {
@@ -1034,8 +1061,10 @@ namespace Terminal.Gui {
 			Assert.Equal (2, view.Y);
 			Assert.Equal (3, view.Width);
 			Assert.Equal (4, view.Height);
-			Assert.True (view.Frame.IsEmpty);
-			Assert.True (view.Bounds.IsEmpty);
+			Assert.False (view.Frame.IsEmpty);
+			Assert.Equal (new Rect (1, 2, 3, 4), view.Frame);
+			Assert.False (view.Bounds.IsEmpty);
+			Assert.Equal (new Rect (0, 0, 3, 4), view.Bounds);
 
 			view.LayoutSubviews ();
 
@@ -1057,10 +1086,10 @@ namespace Terminal.Gui {
 
 			// Constructor
 			view = new View (1, 2, "");
-			Assert.Null (view.X);
-			Assert.Null (view.Y);
-			Assert.Null (view.Width);
-			Assert.Null (view.Height);
+			Assert.NotNull (view.X);
+			Assert.NotNull (view.Y);
+			Assert.NotNull (view.Width);
+			Assert.NotNull (view.Height);
 			Assert.False (view.Frame.IsEmpty);
 			Assert.True (view.Bounds.IsEmpty);
 
@@ -1074,8 +1103,10 @@ namespace Terminal.Gui {
 			Assert.Equal (2, view.Y);
 			Assert.Equal (3, view.Width);
 			Assert.Equal (4, view.Height);
-			Assert.True (view.Frame.IsEmpty);
-			Assert.True (view.Bounds.IsEmpty);
+			Assert.False (view.Frame.IsEmpty);
+			Assert.Equal (new Rect (1, 2, 3, 4), view.Frame);
+			Assert.False (view.Bounds.IsEmpty);
+			Assert.Equal (new Rect (0, 0, 3, 4), view.Bounds);
 		}
 
 		[Fact]
@@ -1108,6 +1139,36 @@ namespace Terminal.Gui {
 			Assert.Equal ("FrameSubview", top.MostFocused.Text);
 			top.ProcessKey (new KeyEvent (Key.BackTab | Key.ShiftMask, new KeyModifiers ()));
 			Assert.Equal ($"WindowSubview", top.MostFocused.Text);
+		}
+
+		[Fact]
+		public void KeyPress_Handled_To_True_Prevents_Changes ()
+		{
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+			Console.MockKeyPresses.Push (new ConsoleKeyInfo ('N', ConsoleKey.N, false, false, false));
+
+			var top = Application.Top;
+
+			var text = new TextField ("");
+			text.KeyPress += (e) => {
+				e.Handled = true;
+				Assert.True (e.Handled);
+				Assert.Equal (Key.N, e.KeyEvent.Key);
+			};
+			top.Add (text);
+
+			Application.Iteration += () => {
+				Console.MockKeyPresses.Push (new ConsoleKeyInfo ('N', ConsoleKey.N, false, false, false));
+				Assert.Equal ("", text.Text);
+
+				Application.RequestStop ();
+			};
+
+			Application.Run ();
+
+			// Shutdown must be called to safely clean up Application if Init has been called
+			Application.Shutdown ();
 		}
 	}
 }

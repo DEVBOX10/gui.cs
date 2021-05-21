@@ -7,8 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using NStack;
+// Alias Console to MockConsole so we don't accidentally use Console
+using Console = Terminal.Gui.FakeConsole;
 
 namespace Terminal.Gui {
 	/// <summary>
@@ -16,15 +19,23 @@ namespace Terminal.Gui {
 	/// </summary>
 	public class FakeDriver : ConsoleDriver {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-		int cols, rows;
+		int cols, rows, left, top;
 		public override int Cols => cols;
 		public override int Rows => rows;
+		// Only handling left here because not all terminals has a horizontal scroll bar.
+		public override int Left => 0;
 		public override int Top => 0;
 		public override bool HeightAsBuffer { get; set; }
+		public override IClipboard Clipboard { get; }
 
 		// The format is rows, columns and 3 values on the last column: Rune, Attribute and Dirty Flag
 		int [,,] contents;
 		bool [] dirtyLine;
+
+		/// <summary>
+		/// Assists with testing, the format is rows, columns and 3 values on the last column: Rune, Attribute and Dirty Flag
+		/// </summary>
+		public int [,,] Contents => contents;
 
 		void UpdateOffscreen ()
 		{
@@ -48,9 +59,13 @@ namespace Terminal.Gui {
 
 		public FakeDriver ()
 		{
-			cols = FakeConsole.WindowWidth;
-			rows = FakeConsole.WindowHeight; // - 1;
-			UpdateOffscreen ();
+			if (RuntimeInformation.IsOSPlatform (OSPlatform.Windows)) {
+				Clipboard = new WindowsClipboard ();
+			} else if (RuntimeInformation.IsOSPlatform (OSPlatform.OSX)) {
+				Clipboard = new MacOSXClipboard ();
+			} else {
+				Clipboard = new CursesClipboard ();
+			}
 		}
 
 		bool needMove;
@@ -122,6 +137,12 @@ namespace Terminal.Gui {
 
 		public override void Init (Action terminalResized)
 		{
+			TerminalResized = terminalResized;
+
+			cols = FakeConsole.WindowWidth = FakeConsole.BufferWidth = FakeConsole.WIDTH;
+			rows = FakeConsole.WindowHeight = FakeConsole.BufferHeight = FakeConsole.HEIGHT;
+			UpdateOffscreen ();
+
 			Colors.TopLevel = new ColorScheme ();
 			Colors.Base = new ColorScheme ();
 			Colors.Dialog = new ColorScheme ();
@@ -185,14 +206,16 @@ namespace Terminal.Gui {
 
 		public override void UpdateScreen ()
 		{
-			int rows = Rows;
+			int top = Top;
+			int left = Left;
+			int rows = Math.Min (Console.WindowHeight + top, Rows);
 			int cols = Cols;
 
 			FakeConsole.CursorTop = 0;
 			FakeConsole.CursorLeft = 0;
-			for (int row = 0; row < rows; row++) {
+			for (int row = top; row < rows; row++) {
 				dirtyLine [row] = false;
-				for (int col = 0; col < cols; col++) {
+				for (int col = left; col < cols; col++) {
 					contents [row, col, 2] = 0;
 					var color = contents [row, col, 1];
 					if (color != redrawColor)
@@ -250,10 +273,10 @@ namespace Terminal.Gui {
 		{
 		}
 
-		int currentAttribute;
+		Attribute currentAttribute;
 		public override void SetAttribute (Attribute c)
 		{
-			currentAttribute = c.Value;
+			currentAttribute = c;
 		}
 
 		Key MapKey (ConsoleKeyInfo keyInfo)
@@ -282,7 +305,7 @@ namespace Terminal.Gui {
 			case ConsoleKey.Enter:
 				return MapKeyModifiers (keyInfo, Key.Enter);
 			case ConsoleKey.Spacebar:
-				return MapKeyModifiers (keyInfo, Key.Space);
+				return MapKeyModifiers (keyInfo, keyInfo.KeyChar == 0 ? Key.Space : (Key)keyInfo.KeyChar);
 			case ConsoleKey.Backspace:
 				return MapKeyModifiers (keyInfo, Key.Backspace);
 			case ConsoleKey.Delete:
@@ -348,6 +371,9 @@ namespace Terminal.Gui {
 
 				return (Key)((uint)Key.F1 + delta);
 			}
+			if (keyInfo.KeyChar != 0) {
+				return MapKeyModifiers (keyInfo, (Key)((uint)keyInfo.KeyChar));
+			}
 
 			return (Key)(0xffffffff);
 		}
@@ -367,37 +393,159 @@ namespace Terminal.Gui {
 			return keyMod != Key.Null ? keyMod | key : key;
 		}
 
+		Action<KeyEvent> keyHandler;
+		Action<KeyEvent> keyUpHandler;
+
 		public override void PrepareToRun (MainLoop mainLoop, Action<KeyEvent> keyHandler, Action<KeyEvent> keyDownHandler, Action<KeyEvent> keyUpHandler, Action<MouseEvent> mouseHandler)
 		{
+			this.keyHandler = keyHandler;
+			this.keyUpHandler = keyUpHandler;
+
 			// Note: Net doesn't support keydown/up events and thus any passed keyDown/UpHandlers will never be called
-			(mainLoop.Driver as FakeMainLoop).KeyPressed = delegate (ConsoleKeyInfo consoleKey) {
-				var map = MapKey (consoleKey);
-				if (map == (Key)0xffffffff)
-					return;
+			(mainLoop.Driver as FakeMainLoop).KeyPressed += (consoleKey) => ProcessInput (consoleKey);
+		}
 
-				if (keyModifiers == null)
-					keyModifiers = new KeyModifiers ();
-				switch (consoleKey.Modifiers) {
-				case ConsoleModifiers.Alt:
-					keyModifiers.Alt = true;
-					break;
-				case ConsoleModifiers.Shift:
-					keyModifiers.Shift = true;
-					break;
-				case ConsoleModifiers.Control:
-					keyModifiers.Ctrl = true;
-					break;
-				}
+		void ProcessInput (ConsoleKeyInfo consoleKey)
+		{
+			var map = MapKey (consoleKey);
+			if (map == (Key)0xffffffff)
+				return;
 
-				keyHandler (new KeyEvent (map, keyModifiers));
-				keyUpHandler (new KeyEvent (map, keyModifiers));
+			if (keyModifiers == null) {
 				keyModifiers = new KeyModifiers ();
-			};
+			}
+
+			if (consoleKey.Modifiers.HasFlag (ConsoleModifiers.Alt)) {
+				keyModifiers.Alt = true;
+			}
+			if (consoleKey.Modifiers.HasFlag (ConsoleModifiers.Shift)) {
+				keyModifiers.Shift = true;
+			}
+			if (consoleKey.Modifiers.HasFlag (ConsoleModifiers.Control)) {
+				keyModifiers.Ctrl = true;
+			}
+
+			keyHandler (new KeyEvent (map, keyModifiers));
+			keyUpHandler (new KeyEvent (map, keyModifiers));
+			keyModifiers = new KeyModifiers ();
 		}
 
 		public override Attribute GetAttribute ()
 		{
 			return currentAttribute;
+		}
+
+		/// <inheritdoc/>
+		public override bool GetCursorVisibility (out CursorVisibility visibility)
+		{
+			visibility = CursorVisibility.Default;
+
+			return false;
+		}
+
+		/// <inheritdoc/>
+		public override bool SetCursorVisibility (CursorVisibility visibility)
+		{
+			return false;
+		}
+
+		/// <inheritdoc/>
+		public override bool EnsureCursorVisibility ()
+		{
+			return false;
+		}
+
+		public override void SendKeys (char keyChar, ConsoleKey key, bool shift, bool alt, bool control)
+		{
+			ProcessInput (new ConsoleKeyInfo (keyChar, key, shift, alt, control));
+		}
+
+		public void SetBufferSize (int width, int height)
+		{
+			cols = FakeConsole.WindowWidth = FakeConsole.BufferWidth = width;
+			rows = FakeConsole.WindowHeight = FakeConsole.BufferHeight = height;
+			ProcessResize ();
+		}
+
+		public void SetWindowSize (int width, int height)
+		{
+			FakeConsole.WindowWidth = width;
+			FakeConsole.WindowHeight = height;
+			if (width > cols || !HeightAsBuffer) {
+				cols = FakeConsole.BufferWidth = width;
+			}
+			if (height > rows || !HeightAsBuffer) {
+				rows = FakeConsole.BufferHeight = height;
+			}
+			ProcessResize ();
+		}
+
+		public void SetWindowPosition (int left, int top)
+		{
+			if (HeightAsBuffer) {
+				this.left = FakeConsole.WindowLeft = Math.Max (Math.Min (left, Cols - FakeConsole.WindowWidth), 0);
+				this.top = FakeConsole.WindowTop = Math.Max (Math.Min (top, Rows - Console.WindowHeight), 0);
+			} else if (this.left > 0 || this.top > 0) {
+				this.left = FakeConsole.WindowLeft = 0;
+				this.top = FakeConsole.WindowTop = 0;
+			}
+		}
+
+		void ProcessResize ()
+		{
+			ResizeScreen ();
+			UpdateOffScreen ();
+			TerminalResized?.Invoke ();
+		}
+
+		void ResizeScreen ()
+		{
+			if (!HeightAsBuffer) {
+				if (Console.WindowHeight > 0) {
+					// Can raise an exception while is still resizing.
+					try {
+#pragma warning disable CA1416
+						Console.CursorTop = 0;
+						Console.CursorLeft = 0;
+						Console.WindowTop = 0;
+						Console.WindowLeft = 0;
+#pragma warning restore CA1416
+					} catch (System.IO.IOException) {
+						return;
+					} catch (ArgumentOutOfRangeException) {
+						return;
+					}
+				}
+			} else {
+				try {
+#pragma warning disable CA1416
+					Console.WindowLeft = Math.Max (Math.Min (left, Cols - Console.WindowWidth), 0);
+					Console.WindowTop = Math.Max (Math.Min (top, Rows - Console.WindowHeight), 0);
+#pragma warning restore CA1416
+				} catch (Exception) {
+					return;
+				}
+			}
+
+			Clip = new Rect (0, 0, Cols, Rows);
+
+			contents = new int [Rows, Cols, 3];
+			dirtyLine = new bool [Rows];
+		}
+
+		void UpdateOffScreen ()
+		{
+			// Can raise an exception while is still resizing.
+			try {
+				for (int row = 0; row < rows; row++) {
+					for (int c = 0; c < cols; c++) {
+						contents [row, c, 0] = ' ';
+						contents [row, c, 1] = (ushort)Colors.TopLevel.Normal;
+						contents [row, c, 2] = 0;
+						dirtyLine [row] = true;
+					}
+				}
+			} catch (IndexOutOfRangeException) { }
 		}
 
 		#region Unused
@@ -417,6 +565,7 @@ namespace Terminal.Gui {
 		public override void UncookMouse ()
 		{
 		}
+
 		#endregion
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 	}

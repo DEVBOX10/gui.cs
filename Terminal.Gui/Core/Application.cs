@@ -88,7 +88,6 @@ namespace Terminal.Gui {
 				}
 				if (Driver.HeightAsBuffer != value) {
 					Driver.HeightAsBuffer = value;
-					Driver.Refresh ();
 				}
 			}
 		}
@@ -110,6 +109,15 @@ namespace Terminal.Gui {
 				}
 			}
 		}
+
+		/// <summary>
+		/// Alternative key to navigate forwards through all views. Ctrl+Tab is always used.
+		/// </summary>
+		public static Key AlternateForwardKey { get; set; } = Key.PageDown | Key.CtrlMask;
+		/// <summary>
+		/// Alternative key to navigate backwards through all views. Shift+Ctrl+Tab is always used.
+		/// </summary>
+		public static Key AlternateBackwardKey { get; set; } = Key.PageUp | Key.CtrlMask;
 
 		/// <summary>
 		/// The <see cref="MainLoop"/>  driver for the application
@@ -200,14 +208,21 @@ namespace Terminal.Gui {
 		static void Init (Func<Toplevel> topLevelFactory, ConsoleDriver driver = null, IMainLoopDriver mainLoopDriver = null)
 		{
 			if (_initialized && driver == null) return;
-			
+
+			if (_initialized) {
+				throw new InvalidOperationException ("Init must be bracketed by Shutdown");
+			}
+
 			// Used only for start debugging on Unix.
-//#if DEBUG
-//			while (!System.Diagnostics.Debugger.IsAttached) {
-//				System.Threading.Thread.Sleep (100);
-//			}
-//			System.Diagnostics.Debugger.Break ();
-//#endif
+			//#if DEBUG
+			//			while (!System.Diagnostics.Debugger.IsAttached) {
+			//				System.Threading.Thread.Sleep (100);
+			//			}
+			//			System.Diagnostics.Debugger.Break ();
+			//#endif
+
+			// Reset all class variables (Application is a singleton).
+			ResetState ();
 
 			// This supports Unit Tests and the passing of a mock driver/loopdriver
 			if (driver != null) {
@@ -524,6 +539,14 @@ namespace Terminal.Gui {
 		/// </summary>
 		public static void Shutdown ()
 		{
+			ResetState ();
+		}
+
+		// Encapsulate all setting of initial state for Application; Having
+		// this in a function like this ensures we don't make mistakes in
+		// guranteeing that the state of this singleton is deterministic when Init
+		// starts running and after Shutdown returns.
+		static void ResetState () {
 			// Shutdown is the bookend for Init. As such it needs to clean up all resources
 			// Init created. Apps that do any threading will need to code defensively for this.
 			// e.g. see Issue #537
@@ -539,6 +562,9 @@ namespace Terminal.Gui {
 			MainLoop = null;
 			Driver?.End ();
 			Driver = null;
+			Iteration = null;
+			RootMouseEvent = null;
+			Resized = null;
 			_initialized = false;
 
 			// Reset synchronization context to allow the user to run async/await,
@@ -547,6 +573,7 @@ namespace Terminal.Gui {
 			// (https://github.com/migueldeicaza/gui.cs/issues/1084).
 			SynchronizationContext.SetSynchronizationContext (syncContext: null);
 		}
+
 
 		static void Redraw (View view)
 		{
@@ -617,6 +644,10 @@ namespace Terminal.Gui {
 
 					MainLoop.MainIteration ();
 					Iteration?.Invoke ();
+					
+					if (Driver.EnsureCursorVisibility ()) {
+						state.Toplevel.SetNeedsDisplay ();
+					}
 				} else if (!wait) {
 					return;
 				}
@@ -697,14 +728,15 @@ namespace Terminal.Gui {
 		public static void Run (Toplevel view, Func<Exception, bool> errorHandler = null)
 		{
 			var resume = true;
-			while (resume)
-			{
-				try
-				{
-					resume = false;
-					var runToken = Begin (view);
-					RunLoop (runToken);
-					End (runToken);
+			while (resume) {
+#if !DEBUG
+				try {
+#endif
+				resume = false;
+				var runToken = Begin (view);
+				RunLoop (runToken);
+				End (runToken);
+#if !DEBUG
 				}
 				catch (Exception error)
 				{
@@ -714,6 +746,7 @@ namespace Terminal.Gui {
 					}
 					resume = errorHandler(error);
 				}
+#endif
 			}
 		}
 
@@ -755,6 +788,9 @@ namespace Terminal.Gui {
 		static void TerminalResized ()
 		{
 			var full = new Rect (0, 0, Driver.Cols, Driver.Rows);
+			Top.Frame = full;
+			Top.Width = full.Width;
+			Top.Height = full.Height;
 			Resized?.Invoke (new ResizedEventArgs () { Cols = full.Width, Rows = full.Height });
 			Driver.Clip = full;
 			foreach (var t in toplevels) {

@@ -63,7 +63,7 @@ namespace UICatalog {
 		private static Scenario _runningScenario = null;
 		private static bool _useSystemConsole = false;
 		private static ConsoleDriver.DiagnosticFlags _diagnosticFlags;
-		private static bool _heightAsBuffer;
+		private static bool _heightAsBuffer = false;
 		private static bool _alwaysSetPosition;
 
 		static void Main (string [] args)
@@ -75,7 +75,7 @@ namespace UICatalog {
 
 			_scenarios = Scenario.GetDerivedClasses<Scenario> ().OrderBy (t => Scenario.ScenarioMetadata.GetName (t)).ToList ();
 
-			if (args.Length > 0 && args.Contains("-usc")) {
+			if (args.Length > 0 && args.Contains ("-usc")) {
 				_useSystemConsole = true;
 				args = args.Where (val => val != "-usc").ToArray ();
 			}
@@ -162,7 +162,7 @@ namespace UICatalog {
 			aboutMessage.AppendLine (@" |___/                   ");
 			aboutMessage.AppendLine ("");
 			aboutMessage.AppendLine ($"Version: {typeof (UICatalogApp).Assembly.GetName ().Version}");
-			aboutMessage.AppendLine ($"Using Terminal.Gui Version: {typeof (Terminal.Gui.Application).Assembly.GetName ().Version}");
+			aboutMessage.AppendLine ($"Using Terminal.Gui Version: {FileVersionInfo.GetVersionInfo (typeof (Terminal.Gui.Application).Assembly.Location).ProductVersion}");
 			aboutMessage.AppendLine ("");
 
 			_menu = new MenuBar (new MenuBarItem [] {
@@ -259,6 +259,7 @@ namespace UICatalog {
 					_top.LayoutSubviews();
 					_top.SetChildNeedsDisplay();
 				}),
+				new StatusItem (Key.CharMask, Application.Driver.GetType ().Name, null),
 			};
 
 			SetColorScheme ();
@@ -331,7 +332,7 @@ namespace UICatalog {
 			var index = 0;
 
 			List<MenuItem> menuItems = new List<MenuItem> ();
-			foreach (Enum diag in Enum.GetValues(_diagnosticFlags.GetType())) {
+			foreach (Enum diag in Enum.GetValues (_diagnosticFlags.GetType ())) {
 				var item = new MenuItem ();
 				item.Title = GetDiagnosticsTitle (diag);
 				item.Shortcut = Key.AltMask + index.ToString () [0];

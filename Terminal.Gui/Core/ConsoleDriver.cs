@@ -63,7 +63,7 @@ namespace Terminal.Gui {
 		/// <summary>
 		/// The bright cyan color.
 		/// </summary>
-		BrighCyan,
+		BrightCyan,
 		/// <summary>
 		/// The bright red color.
 		/// </summary>
@@ -124,7 +124,7 @@ namespace Terminal.Gui {
 		/// <param name="background">Background</param>
 		public Attribute (Color foreground = new Color (), Color background = new Color ())
 		{
-			Value = (int)foreground | ((int)background << 4);
+			Value = Make (foreground, background).Value;
 			Foreground = foreground;
 			Background = background;
 		}
@@ -476,6 +476,64 @@ namespace Terminal.Gui {
 		public static Dictionary<string, ColorScheme> ColorSchemes { get; }
 	}
 
+	/// <summary>
+	/// Cursors Visibility that are displayed
+	/// </summary>
+	// 
+	// Hexa value are set as 0xAABBCCDD where :
+	//
+	//     AA stand for the TERMINFO DECSUSR parameter value to be used under Linux & MacOS
+	//     BB stand for the NCurses curs_set parameter value to be used under Linux & MacOS
+	//     CC stand for the CONSOLE_CURSOR_INFO.bVisible parameter value to be used under Windows
+	//     DD stand for the CONSOLE_CURSOR_INFO.dwSize parameter value to be used under Windows
+	//
+	public enum CursorVisibility {
+		/// <summary>
+		///	Cursor caret has default
+		/// </summary>
+		/// <remarks>Works under Xterm-like terminal otherwise this is equivalent to <see ref="Underscore"/>. This default directly depends of the XTerm user configuration settings so it could be Block, I-Beam, Underline with possible blinking.</remarks>
+		Default = 0x00010119,
+
+		/// <summary>
+		///	Cursor caret is hidden
+		/// </summary>
+		Invisible = 0x03000019,
+
+		/// <summary>
+		///	Cursor caret is normally shown as a blinking underline bar _
+		/// </summary>
+		Underline = 0x03010119,
+
+		/// <summary>
+		///	Cursor caret is normally shown as a underline bar _
+		/// </summary>
+		/// <remarks>Under Windows, this is equivalent to <see ref="UnderscoreBlinking"/></remarks>
+		UnderlineFix = 0x04010119,
+
+		/// <summary>
+		///	Cursor caret is displayed a blinking vertical bar |
+		/// </summary>
+		/// <remarks>Works under Xterm-like terminal otherwise this is equivalent to <see ref="Underscore"/></remarks>
+		Vertical = 0x05010119,
+
+		/// <summary>
+		///	Cursor caret is displayed a blinking vertical bar |
+		/// </summary>
+		/// <remarks>Works under Xterm-like terminal otherwise this is equivalent to <see ref="Underscore"/></remarks>
+		VerticalFix = 0x06010119,
+
+		/// <summary>
+		///	Cursor caret is displayed as a blinking block ▉
+		/// </summary>
+		Box = 0x01020164,
+
+		/// <summary>
+		///	Cursor caret is displayed a block ▉
+		/// </summary>
+		/// <remarks>Works under Xterm-like terminal otherwise this is equivalent to <see ref="Block"/></remarks>
+		BoxFix = 0x02020164,
+	}
+
 	///// <summary>
 	///// Special characters that can be drawn with 
 	///// </summary>
@@ -555,14 +613,26 @@ namespace Terminal.Gui {
 		/// The current number of columns in the terminal.
 		/// </summary>
 		public abstract int Cols { get; }
+
 		/// <summary>
 		/// The current number of rows in the terminal.
 		/// </summary>
 		public abstract int Rows { get; }
+
+		/// <summary>
+		/// The current left in the terminal.
+		/// </summary>
+		public abstract int Left { get; }
+
 		/// <summary>
 		/// The current top in the terminal.
 		/// </summary>
 		public abstract int Top { get; }
+
+		/// <summary>
+		/// Get the operation system clipboard.
+		/// </summary>
+		public abstract IClipboard Clipboard { get; }
 
 		/// <summary>
 		/// If false height is measured by the window height and thus no scrolling.
@@ -629,6 +699,26 @@ namespace Terminal.Gui {
 		public abstract void UpdateCursor ();
 
 		/// <summary>
+		/// Retreive the cursor caret visibility
+		/// </summary>
+		/// <param name="visibility">The current <see cref="CursorVisibility"/></param>
+		/// <returns>true upon success</returns>
+		public abstract bool GetCursorVisibility (out CursorVisibility visibility);
+
+		/// <summary>
+		/// Change the cursor caret visibility
+		/// </summary>
+		/// <param name="visibility">The wished <see cref="CursorVisibility"/></param>
+		/// <returns>true upon success</returns>
+		public abstract bool SetCursorVisibility (CursorVisibility visibility);
+
+		/// <summary>
+		/// Ensure the cursor visibility
+		/// </summary>
+		/// <returns>true upon success</returns>
+		public abstract bool EnsureCursorVisibility ();
+
+		/// <summary>
 		/// Ends the execution of the console driver.
 		/// </summary>
 		public abstract void End ();
@@ -660,6 +750,16 @@ namespace Terminal.Gui {
 		/// <param name="foregroundColorId">Foreground color identifier.</param>
 		/// <param name="backgroundColorId">Background color identifier.</param>
 		public abstract void SetColors (short foregroundColorId, short backgroundColorId);
+
+		/// <summary>
+		/// Allows sending keys without typing on a keyboard.
+		/// </summary>
+		/// <param name="keyChar">The character key.</param>
+		/// <param name="key">The key.</param>
+		/// <param name="shift">If shift key is sending.</param>
+		/// <param name="alt">If alt key is sending.</param>
+		/// <param name="control">If control key is sending.</param>
+		public abstract void SendKeys (char keyChar, ConsoleKey key, bool shift, bool alt, bool control);
 
 		/// <summary>
 		/// Set the handler when the terminal is resized.
@@ -1077,5 +1177,21 @@ namespace Terminal.Gui {
 		/// </summary>
 		/// <returns>The current attribute.</returns>
 		public abstract Attribute GetAttribute ();
+	}
+
+	/// <summary>
+	/// Definition to interact with the OS clipboard.
+	/// </summary>
+	public interface IClipboard {
+		/// <summary>
+		/// Sets the operation system clipboard.
+		/// </summary>
+		/// <param name="text"></param>
+		void SetClipboardData (string text);
+		/// <summary>
+		/// Get the operation system clipboard.
+		/// </summary>
+		/// <returns></returns>
+		string GetClipboardData ();
 	}
 }

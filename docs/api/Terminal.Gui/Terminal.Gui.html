@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace Terminal.Gui
    ">
-    <meta name="generator" content="docfx 2.56.2.0">
+    <meta name="generator" content="docfx 2.56.7.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -61,11 +61,11 @@
       <div class="container body-content">
         
         <div id="search-results">
-          <div class="search-list"></div>
+          <div class="search-list">Search Results for <span></span></div>
           <div class="sr-items">
             <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
           </div>
-          <ul id="pagination"></ul>
+          <ul id="pagination" data-first="First" data-prev="Previous" data-next="Next" data-last="Last"></ul>
         </div>
       </div>
       <div role="main" class="container body-content hide-when-search">
@@ -156,6 +156,12 @@ Dim properties of a <a class="xref" href="Terminal.Gui.View.html">View</a> to co
       <section>
 Implements a mock ConsoleDriver for unit testing
 </section>
+      <h4><a class="xref" href="Terminal.Gui.FakeMainLoop.html">FakeMainLoop</a></h4>
+      <section>
+Mainloop intended to be used with the .NET System.Console API, and can
+be used on Windows and Unix, it is cross platform but lacks things like
+file descriptor monitoring.
+</section>
       <h4><a class="xref" href="Terminal.Gui.FileDialog.html">FileDialog</a></h4>
       <section>
 Base class for the <a class="xref" href="Terminal.Gui.OpenDialog.html">OpenDialog</a> and the <a class="xref" href="Terminal.Gui.SaveDialog.html">SaveDialog</a>
@@ -164,6 +170,10 @@ Base class for the <a class="xref" href="Terminal.Gui.OpenDialog.html">OpenDialo
       <section>
 The FrameView is a container frame that draws a frame around the contents. It is similar to
 a GroupBox in Windows.
+</section>
+      <h4><a class="xref" href="Terminal.Gui.GraphView.html">GraphView</a></h4>
+      <section>
+Control for rendering graphs (bar, scatter etc)
 </section>
       <h4><a class="xref" href="Terminal.Gui.HexView.html">HexView</a></h4>
       <section>
@@ -213,12 +223,6 @@ A <a class="xref" href="Terminal.Gui.MenuItem.html">MenuItem</a> has a title, an
       <h4><a class="xref" href="Terminal.Gui.MessageBox.html">MessageBox</a></h4>
       <section>
 MessageBox displays a modal message to the user, with a title, a message and a series of options that the user can choose from.
-</section>
-      <h4><a class="xref" href="Terminal.Gui.NetMainLoop.html">NetMainLoop</a></h4>
-      <section>
-Mainloop intended to be used with the .NET System.Console API, and can
-be used on Windows and Unix, it is cross platform but lacks things like
-file descriptor monitoring.
 </section>
       <h4><a class="xref" href="Terminal.Gui.OpenDialog.html">OpenDialog</a></h4>
       <section>
@@ -282,6 +286,53 @@ The colour of the <a class="xref" href="Terminal.Gui.StatusItem.html#Terminal_Gu
 A <a class="xref" href="Terminal.Gui.StatusItem.html#Terminal_Gui_StatusItem_Title">Title</a> set to `~F1~ Help` will render as *F1* using <a class="xref" href="Terminal.Gui.ColorScheme.html#Terminal_Gui_ColorScheme_HotNormal">HotNormal</a> and
 *Help* as <a class="xref" href="Terminal.Gui.ColorScheme.html#Terminal_Gui_ColorScheme_HotNormal">HotNormal</a>.
 </section>
+      <h4><a class="xref" href="Terminal.Gui.TableView.html">TableView</a></h4>
+      <section>
+View for tabular data based on a <span class="xref">System.Data.DataTable</span>.
+
+<a href="https://migueldeicaza.github.io/gui.cs/articles/tableview.html">See TableView Deep Dive for more information</a>.
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TableView.CellActivatedEventArgs.html">TableView.CellActivatedEventArgs</a></h4>
+      <section>
+Defines the event arguments for <a class="xref" href="Terminal.Gui.TableView.html#Terminal_Gui_TableView_CellActivated">CellActivated</a> event
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TableView.ColumnStyle.html">TableView.ColumnStyle</a></h4>
+      <section>
+Describes how to render a given column in  a <a class="xref" href="Terminal.Gui.TableView.html">TableView</a> including <a class="xref" href="Terminal.Gui.TableView.ColumnStyle.html#Terminal_Gui_TableView_ColumnStyle_Alignment">Alignment</a> 
+and textual representation of cells (e.g. date formats)
+
+<a href="https://migueldeicaza.github.io/gui.cs/articles/tableview.html">See TableView Deep Dive for more information</a>.
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TableView.SelectedCellChangedEventArgs.html">TableView.SelectedCellChangedEventArgs</a></h4>
+      <section>
+Defines the event arguments for <a class="xref" href="Terminal.Gui.TableView.html#Terminal_Gui_TableView_SelectedCellChanged">SelectedCellChanged</a> 
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TableView.TableSelection.html">TableView.TableSelection</a></h4>
+      <section>
+Describes a selected region of the table
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TableView.TableStyle.html">TableView.TableStyle</a></h4>
+      <section>
+Defines rendering options that affect how the table is displayed.
+
+<a href="https://migueldeicaza.github.io/gui.cs/articles/tableview.html">See TableView Deep Dive for more information</a>.
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TabView.html">TabView</a></h4>
+      <section>
+Control that hosts multiple sub views, presenting a single one at once
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TabView.Tab.html">TabView.Tab</a></h4>
+      <section>
+A single tab in a <a class="xref" href="Terminal.Gui.TabView.html">TabView</a>
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TabView.TabChangedEventArgs.html">TabView.TabChangedEventArgs</a></h4>
+      <section>
+Describes a change in <a class="xref" href="Terminal.Gui.TabView.html#Terminal_Gui_TabView_SelectedTab">SelectedTab</a>
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TabView.TabStyle.html">TabView.TabStyle</a></h4>
+      <section>
+Describes render stylistic selections of a <a class="xref" href="Terminal.Gui.TabView.html">TabView</a>
+</section>
       <h4><a class="xref" href="Terminal.Gui.TextChangingEventArgs.html">TextChangingEventArgs</a></h4>
       <section>
 An <span class="xref">System.EventArgs</span> which allows passing a cancelable new text value event.
@@ -294,6 +345,10 @@ Single-line text entry <a class="xref" href="Terminal.Gui.View.html">View</a>
       <section>
 Provides text formatting capabilities for console apps. Supports, hotkeys, horizontal alignment, multiple lines, and word-based line wrap.
 </section>
+      <h4><a class="xref" href="Terminal.Gui.TextValidateField.html">TextValidateField</a></h4>
+      <section>
+Text field that validates input through a  <a class="xref" href="Terminal.Gui.TextValidateProviders.ITextValidateProvider.html">ITextValidateProvider</a>
+</section>
       <h4><a class="xref" href="Terminal.Gui.TextView.html">TextView</a></h4>
       <section>
 Multi-line text editing <a class="xref" href="Terminal.Gui.View.html">View</a>
@@ -305,6 +360,20 @@ Time editing <a class="xref" href="Terminal.Gui.View.html">View</a>
       <h4><a class="xref" href="Terminal.Gui.Toplevel.html">Toplevel</a></h4>
       <section>
 Toplevel views can be modally executed.
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TreeView.html">TreeView</a></h4>
+      <section>
+Convenience implementation of generic <a class="xref" href="Terminal.Gui.TreeView-1.html">TreeView&lt;T&gt;</a> for any tree were all nodes
+implement <a class="xref" href="Terminal.Gui.Trees.ITreeNode.html">ITreeNode</a>.
+
+<a href="https://migueldeicaza.github.io/gui.cs/articles/treeview.html">See TreeView Deep Dive for more information</a>.
+</section>
+      <h4><a class="xref" href="Terminal.Gui.TreeView-1.html">TreeView&lt;T&gt;</a></h4>
+      <section>
+Hierarchical tree view with expandable branches.  Branch objects are dynamically determined
+when expanded using a user defined <a class="xref" href="Terminal.Gui.Trees.ITreeBuilder-1.html">ITreeBuilder&lt;T&gt;</a>
+
+<a href="https://migueldeicaza.github.io/gui.cs/articles/treeview.html">See TreeView Deep Dive for more information</a>.
 </section>
       <h4><a class="xref" href="Terminal.Gui.View.html">View</a></h4>
       <section>
@@ -344,13 +413,25 @@ Describes a mouse event
       <section>
 Represents an ordered pair of integer x- and y-coordinates that defines a point in a two-dimensional plane.
 </section>
+      <h4><a class="xref" href="Terminal.Gui.PointF.html">PointF</a></h4>
+      <section>
+Represents an ordered pair of x and y coordinates that define a point in a two-dimensional plane.
+</section>
       <h4><a class="xref" href="Terminal.Gui.Rect.html">Rect</a></h4>
       <section>
 Stores a set of four integers that represent the location and size of a rectangle
 </section>
+      <h4><a class="xref" href="Terminal.Gui.RectangleF.html">RectangleF</a></h4>
+      <section>
+Stores the location and size of a rectangular region.
+</section>
       <h4><a class="xref" href="Terminal.Gui.Size.html">Size</a></h4>
       <section>
 Stores an ordered pair of integers, which specify a Height and Width.
+</section>
+      <h4><a class="xref" href="Terminal.Gui.SizeF.html">SizeF</a></h4>
+      <section>
+Represents the size of a rectangular region with an ordered pair of width and height.
 </section>
     <h3 id="interfaces">Interfaces
   </h3>
@@ -362,6 +443,12 @@ Implement <a class="xref" href="Terminal.Gui.IListDataSource.html">IListDataSour
       <section>
 Public interface to create your own platform specific main loop driver.
 </section>
+      <h4><a class="xref" href="Terminal.Gui.ITreeView.html">ITreeView</a></h4>
+      <section>
+Interface for all non generic members of <a class="xref" href="Terminal.Gui.TreeView-1.html">TreeView&lt;T&gt;</a>
+
+<a href="https://migueldeicaza.github.io/gui.cs/articles/treeview.html">See TreeView Deep Dive for more information</a>.
+</section>
     <h3 id="enums">Enums
   </h3>
       <h4><a class="xref" href="Terminal.Gui.Color.html">Color</a></h4>
@@ -370,7 +457,11 @@ Basic colors that can be used to set the foreground and background colors in con
 </section>
       <h4><a class="xref" href="Terminal.Gui.ConsoleDriver.DiagnosticFlags.html">ConsoleDriver.DiagnosticFlags</a></h4>
       <section>
-Enables diagnostic funcions
+Enables diagnostic functions
+</section>
+      <h4><a class="xref" href="Terminal.Gui.CursorVisibility.html">CursorVisibility</a></h4>
+      <section>
+Cursors Visibility that are displayed
 </section>
       <h4><a class="xref" href="Terminal.Gui.DisplayModeLayout.html">DisplayModeLayout</a></h4>
       <section>
@@ -399,6 +490,14 @@ Mouse flags reported in <a class="xref" href="Terminal.Gui.MouseEvent.html">Mous
       <section>
 Text alignment enumeration, controls how text is displayed.
 </section>
+      <h4><a class="xref" href="Terminal.Gui.TextDirection.html">TextDirection</a></h4>
+      <section>
+Text direction enumeration, controls how text is displayed.
+</section>
+      <h4><a class="xref" href="Terminal.Gui.VerticalTextAlignment.html">VerticalTextAlignment</a></h4>
+      <section>
+Vertical text alignment enumeration, controls how text is displayed.
+</section>
 </article>
           </div>
           
@@ -409,7 +508,8 @@ Text alignment enumeration, controls how text is displayed.
                 </ul>
               </div>
               <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
-              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+                <h5>In This Article</h5>
+                <div></div>
               </nav>
             </div>
           </div>

@@ -10,7 +10,7 @@ using Xunit;
 // Alais Console to MockConsole so we don't accidentally use Console
 using Console = Terminal.Gui.FakeConsole;
 
-namespace Terminal.Gui {
+namespace Terminal.Gui.Core {
 	public class PosTests {
 		[Fact]
 		public void New_Works ()
@@ -79,7 +79,7 @@ namespace Terminal.Gui {
 			Assert.Equal (pos1, pos2);
 		}
 
-		[Fact] 
+		[Fact]
 		public void SetSide_Null_Throws ()
 		{
 			var pos = Pos.Left (null);
@@ -91,7 +91,7 @@ namespace Terminal.Gui {
 			pos = Pos.Top (null);
 			Assert.Throws<NullReferenceException> (() => pos.ToString ());
 
-			pos = Pos.Y(null);
+			pos = Pos.Y (null);
 			Assert.Throws<NullReferenceException> (() => pos.ToString ());
 
 			pos = Pos.Bottom (null);
@@ -112,7 +112,7 @@ namespace Terminal.Gui {
 			string side; // used in format string
 			var testRect = Rect.Empty;
 			var testInt = 0;
-			Pos pos; 
+			Pos pos;
 
 			// Pos.Left
 			side = "x";
@@ -288,6 +288,8 @@ namespace Terminal.Gui {
 			{
 				// Cleanup
 				Application.End (rs);
+				// Shutdown must be called to safely clean up Application if Init has been called
+				Application.Shutdown ();
 			}
 
 			// Test cases:
@@ -326,7 +328,6 @@ namespace Terminal.Gui {
 			rs = Application.Begin (Application.Top);
 			Application.Run ();
 			cleanup (rs);
-
 		}
 
 		[Fact]
@@ -456,9 +457,194 @@ namespace Terminal.Gui {
 			Application.Shutdown ();
 		}
 
-		// TODO: Test PosCombine
+		// DONE: Test PosCombine
+		// DONE: Test operators
+		[Fact]
+		public void PosCombine_Do_Not_Throws ()
+		{
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 
+			var t = Application.Top;
 
-		// TODO: Test operators
+			var w = new Window ("w") {
+				X = Pos.Left (t) + 2,
+				Y = Pos.Top (t) + 2
+			};
+			var f = new FrameView ("f");
+			var v1 = new View ("v1") {
+				X = Pos.Left (w) + 2,
+				Y = Pos.Top (w) + 2
+			};
+			var v2 = new View ("v2") {
+				X = Pos.Left (v1) + 2,
+				Y = Pos.Top (v1) + 2
+			};
+
+			f.Add (v1, v2);
+			w.Add (f);
+			t.Add (w);
+
+			f.X = Pos.X (t) + Pos.X (v2) - Pos.X (v1);
+			f.Y = Pos.Y (t) + Pos.Y (v2) - Pos.Y (v1);
+
+			t.Ready += () => {
+				Assert.Equal (0, t.Frame.X);
+				Assert.Equal (0, t.Frame.Y);
+				Assert.Equal (2, w.Frame.X);
+				Assert.Equal (2, w.Frame.Y);
+				Assert.Equal (2, f.Frame.X);
+				Assert.Equal (2, f.Frame.Y);
+				Assert.Equal (4, v1.Frame.X);
+				Assert.Equal (4, v1.Frame.Y);
+				Assert.Equal (6, v2.Frame.X);
+				Assert.Equal (6, v2.Frame.Y);
+			};
+
+			Application.Iteration += () => Application.RequestStop ();
+
+			Application.Run ();
+			Application.Shutdown ();
+		}
+
+		[Fact]
+		public void PosCombine_Will_Throws ()
+		{
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+			var t = Application.Top;
+
+			var w = new Window ("w") {
+				X = Pos.Left (t) + 2,
+				Y = Pos.Top (t) + 2
+			};
+			var f = new FrameView ("f");
+			var v1 = new View ("v1") {
+				X = Pos.Left (w) + 2,
+				Y = Pos.Top (w) + 2
+			};
+			var v2 = new View ("v2") {
+				X = Pos.Left (v1) + 2,
+				Y = Pos.Top (v1) + 2
+			};
+
+			f.Add (v1); // v2 not added
+			w.Add (f);
+			t.Add (w);
+
+			f.X = Pos.X (v2) - Pos.X (v1);
+			f.Y = Pos.Y (v2) - Pos.Y (v1);
+
+			Assert.Throws<InvalidOperationException> (() => Application.Run ());
+			Application.Shutdown ();
+		}
+
+		[Fact]
+		public void Pos_Add_Operator ()
+		{
+
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+			var top = Application.Top;
+
+			var view = new View () { X = 0, Y = 0, Width = 20, Height = 20 };
+			var field = new TextField () { X = 0, Y = 0, Width = 20 };
+			var count = 0;
+
+			field.KeyDown += (k) => {
+				if (k.KeyEvent.Key == Key.Enter) {
+					field.Text = $"Label {count}";
+					var label = new Label (field.Text) { X = 0, Y = field.Y, Width = 20 };
+					view.Add (label);
+					Assert.Equal ($"Label {count}", label.Text);
+					Assert.Equal ($"Pos.Absolute({count})", label.Y.ToString ());
+
+					Assert.Equal ($"Pos.Absolute({count})", field.Y.ToString ());
+					field.Y += 1;
+					count++;
+					Assert.Equal ($"Pos.Absolute({count})", field.Y.ToString ());
+				}
+			};
+
+			Application.Iteration += () => {
+				while (count < 20) {
+					field.OnKeyDown (new KeyEvent (Key.Enter, new KeyModifiers ()));
+				}
+
+				Application.RequestStop ();
+			};
+
+			var win = new Window ();
+			win.Add (view);
+			win.Add (field);
+
+			top.Add (win);
+
+			Application.Run (top);
+
+			Assert.Equal (20, count);
+
+			// Shutdown must be called to safely clean up Application if Init has been called
+			Application.Shutdown ();
+		}
+
+		[Fact]
+		public void Pos_Subtract_Operator ()
+		{
+
+			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+			var top = Application.Top;
+
+			var view = new View () { X = 0, Y = 0, Width = 20, Height = 20 };
+			var field = new TextField () { X = 0, Y = 0, Width = 20 };
+			var count = 20;
+			var listLabels = new List<Label> ();
+
+			for (int i = 0; i < count; i++) {
+				field.Text = $"Label {i}";
+				var label = new Label (field.Text) { X = 0, Y = field.Y, Width = 20 };
+				view.Add (label);
+				Assert.Equal ($"Label {i}", label.Text);
+				Assert.Equal ($"Pos.Absolute({i})", field.Y.ToString ());
+				listLabels.Add (label);
+
+				Assert.Equal ($"Pos.Absolute({i})", field.Y.ToString ());
+				field.Y += 1;
+				Assert.Equal ($"Pos.Absolute({i + 1})", field.Y.ToString ());
+			}
+
+			field.KeyDown += (k) => {
+				if (k.KeyEvent.Key == Key.Enter) {
+					Assert.Equal ($"Label {count - 1}", listLabels [count - 1].Text);
+					view.Remove (listLabels [count - 1]);
+
+					Assert.Equal ($"Pos.Absolute({count})", field.Y.ToString ());
+					field.Y -= 1;
+					count--;
+					Assert.Equal ($"Pos.Absolute({count})", field.Y.ToString ());
+				}
+			};
+
+			Application.Iteration += () => {
+				while (count > 0) {
+					field.OnKeyDown (new KeyEvent (Key.Enter, new KeyModifiers ()));
+				}
+
+				Application.RequestStop ();
+			};
+
+			var win = new Window ();
+			win.Add (view);
+			win.Add (field);
+
+			top.Add (win);
+
+			Application.Run (top);
+
+			Assert.Equal (0, count);
+
+			// Shutdown must be called to safely clean up Application if Init has been called
+			Application.Shutdown ();
+		}
 	}
 }
