@@ -1170,5 +1170,403 @@ namespace Terminal.Gui.Views {
 			// Shutdown must be called to safely clean up Application if Init has been called
 			Application.Shutdown ();
 		}
+
+		[Fact]
+		public void SetWidth_CanSetWidth ()
+		{
+			var top = new View () {
+				X = 0,
+				Y = 0,
+				Width = 80,
+			};
+
+			var v = new View () {
+				Width = Dim.Fill ()
+			};
+			top.Add (v);
+
+			Assert.False (v.SetWidth (70, out int rWidth));
+			Assert.Equal (70, rWidth);
+
+			v.Width = Dim.Fill (1);
+			Assert.False (v.SetWidth (70, out rWidth));
+			Assert.Equal (69, rWidth);
+
+			v.Width = null;
+			Assert.True (v.SetWidth (70, out rWidth));
+			Assert.Equal (70, rWidth);
+
+			v.IsInitialized = true;
+			v.Width = Dim.Fill (1);
+			Assert.Throws<ArgumentException> (() => v.Width = 75);
+			v.LayoutStyle = LayoutStyle.Absolute;
+			v.Width = 75;
+			Assert.True (v.SetWidth (60, out rWidth));
+			Assert.Equal (60, rWidth);
+		}
+
+		[Fact]
+		public void SetHeight_CanSetHeight ()
+		{
+			var top = new View () {
+				X = 0,
+				Y = 0,
+				Height = 20
+			};
+
+			var v = new View () {
+				Height = Dim.Fill ()
+			};
+			top.Add (v);
+
+			Assert.False (v.SetHeight (10, out int rHeight));
+			Assert.Equal (10, rHeight);
+
+			v.Height = Dim.Fill (1);
+			Assert.False (v.SetHeight (10, out rHeight));
+			Assert.Equal (9, rHeight);
+
+			v.Height = null;
+			Assert.True (v.SetHeight (10, out rHeight));
+			Assert.Equal (10, rHeight);
+
+			v.IsInitialized = true;
+			v.Height = Dim.Fill (1);
+			Assert.Throws<ArgumentException> (() => v.Height = 15);
+			v.LayoutStyle = LayoutStyle.Absolute;
+			v.Height = 15;
+			Assert.True (v.SetHeight (5, out rHeight));
+			Assert.Equal (5, rHeight);
+		}
+
+		[Fact]
+		public void GetCurrentWidth_CanSetWidth ()
+		{
+			var top = new View () {
+				X = 0,
+				Y = 0,
+				Width = 80,
+			};
+
+			var v = new View () {
+				Width = Dim.Fill ()
+			};
+			top.Add (v);
+
+			Assert.False (v.GetCurrentWidth (out int cWidth));
+			Assert.Equal (80, cWidth);
+
+			v.Width = Dim.Fill (1);
+			Assert.False (v.GetCurrentWidth (out cWidth));
+			Assert.Equal (79, cWidth);
+		}
+
+		[Fact]
+		public void GetCurrentHeight_CanSetHeight ()
+		{
+			var top = new View () {
+				X = 0,
+				Y = 0,
+				Height = 20
+			};
+
+			var v = new View () {
+				Height = Dim.Fill ()
+			};
+			top.Add (v);
+
+			Assert.False (v.GetCurrentHeight (out int cHeight));
+			Assert.Equal (20, cHeight);
+
+			v.Height = Dim.Fill (1);
+			Assert.False (v.GetCurrentHeight (out cHeight));
+			Assert.Equal (19, cHeight);
+		}
+
+		[Fact]
+		public void AutoSize_False_ResizeView_Is_Always_False ()
+		{
+			var label = new Label () { AutoSize = false };
+
+			label.Text = "New text";
+
+			Assert.False (label.AutoSize);
+			Assert.Equal ("{X=0,Y=0,Width=0,Height=0}", label.Bounds.ToString ());
+		}
+
+		[Fact]
+		public void AutoSize_True_ResizeView_With_Dim_Absolute ()
+		{
+			var label = new Label ();
+
+			label.Text = "New text";
+
+			Assert.True (label.AutoSize);
+			Assert.Equal ("{X=0,Y=0,Width=8,Height=1}", label.Bounds.ToString ());
+		}
+
+		[Fact]
+		public void AutoSize_True_ResizeView_With_Dim_Fill ()
+		{
+			var win = new Window (new Rect (0, 0, 30, 80), "");
+			var label = new Label () { Width = Dim.Fill (), Height = Dim.Fill () };
+			win.Add (label);
+
+			label.Text = "New text\nNew line";
+			win.LayoutSubviews ();
+
+			Assert.True (label.AutoSize);
+			Assert.Equal ("{X=0,Y=0,Width=28,Height=78}", label.Bounds.ToString ());
+		}
+
+		[Fact]
+		public void AutoSize_True_SetWidthHeight_With_Dim_Fill_And_Dim_Absolute ()
+		{
+			var win = new Window (new Rect (0, 0, 30, 80), "");
+			var label = new Label () { Width = Dim.Fill () };
+			win.Add (label);
+
+			label.Text = "New text\nNew line";
+			win.LayoutSubviews ();
+
+			Assert.True (label.AutoSize);
+			Assert.Equal ("{X=0,Y=0,Width=28,Height=2}", label.Bounds.ToString ());
+		}
+
+		[Theory]
+		[InlineData (1)]
+		[InlineData (2)]
+		[InlineData (3)]
+		public void LabelChangeText_RendersCorrectly_Constructors (int choice)
+		{
+			var driver = new FakeDriver ();
+			Application.Init (driver, new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+			try {
+				// Create a label with a short text 
+				Label lbl;
+				var text = "test";
+
+				if (choice == 1) {
+					// An object initializer should call the default constructor.
+					lbl = new Label { Text = text };
+				} else if (choice == 2) {
+					// Calling the default constructor followed by the object initializer.
+					lbl = new Label () { Text = text };
+				} else {
+					// Calling the Text constructor.
+					lbl = new Label (text);
+				}
+				lbl.ColorScheme = new ColorScheme ();
+				lbl.Redraw (lbl.Bounds);
+
+				// should have the initial text
+				Assert.Equal ('t', driver.Contents [0, 0, 0]);
+				Assert.Equal ('e', driver.Contents [0, 1, 0]);
+				Assert.Equal ('s', driver.Contents [0, 2, 0]);
+				Assert.Equal ('t', driver.Contents [0, 3, 0]);
+				Assert.Equal (' ', driver.Contents [0, 4, 0]);
+			} finally {
+				Application.Shutdown ();
+			}
+		}
+
+		[Fact]
+		[AutoInitShutdown]
+		public void Internal_Tests ()
+		{
+			Assert.Equal (new [] { View.Direction.Forward, View.Direction.Backward },
+				Enum.GetValues (typeof (View.Direction)));
+
+			var rect = new Rect (1, 1, 10, 1);
+			var view = new View (rect);
+			var top = Application.Top;
+			top.Add (view);
+			Assert.Equal (View.Direction.Forward, view.FocusDirection);
+			view.FocusDirection = View.Direction.Backward;
+			Assert.Equal (View.Direction.Backward, view.FocusDirection);
+			Assert.Empty (view.InternalSubviews);
+			Assert.Equal (new Rect (new Point (0, 0), rect.Size), view.NeedDisplay);
+			Assert.True (view.LayoutNeeded);
+			Assert.False (view.ChildNeedsDisplay);
+			Assert.False (view.addingView);
+			view.addingView = true;
+			Assert.True (view.addingView);
+			view.ViewToScreen (0, 0, out int rcol, out int rrow);
+			Assert.Equal (1, rcol);
+			Assert.Equal (1, rrow);
+			Assert.Equal (rect, view.ViewToScreen (view.Bounds));
+			Assert.Equal (top.Bounds, view.ScreenClip (top.Bounds));
+			view.Width = Dim.Fill ();
+			view.Height = Dim.Fill ();
+			Assert.Equal (10, view.Bounds.Width);
+			Assert.Equal (1, view.Bounds.Height);
+			view.SetRelativeLayout (top.Bounds);
+			Assert.Equal (79, view.Bounds.Width);
+			Assert.Equal (24, view.Bounds.Height);
+			bool layoutStarted = false;
+			view.LayoutStarted += (_) => { layoutStarted = true; };
+			view.OnLayoutStarted (null);
+			Assert.True (layoutStarted);
+			view.LayoutComplete += (_) => { layoutStarted = false; };
+			view.OnLayoutComplete (null);
+			Assert.False (layoutStarted);
+		}
+
+		[Fact]
+		[AutoInitShutdown]
+		public void Enabled_False_Sets_HasFocus_To_False ()
+		{
+			var wasClicked = false;
+			var view = new Button ("Click Me");
+			view.Clicked += () => wasClicked = !wasClicked;
+			Application.Top.Add (view);
+
+			view.ProcessKey (new KeyEvent (Key.Enter, null));
+			Assert.True (wasClicked);
+			view.MouseEvent (new MouseEvent () { Flags = MouseFlags.Button1Clicked });
+			Assert.False (wasClicked);
+			Assert.True (view.Enabled);
+			Assert.True (view.CanFocus);
+			Assert.True (view.HasFocus);
+
+			view.Enabled = false;
+			view.ProcessKey (new KeyEvent (Key.Enter, null));
+			Assert.False (wasClicked);
+			view.MouseEvent (new MouseEvent () { Flags = MouseFlags.Button1Clicked });
+			Assert.False (wasClicked);
+			Assert.False (view.Enabled);
+			Assert.True (view.CanFocus);
+			Assert.False (view.HasFocus);
+			view.SetFocus ();
+			Assert.False (view.HasFocus);
+		}
+
+		[Fact]
+		[AutoInitShutdown]
+		public void Enabled_Sets_Also_Sets_Subviews ()
+		{
+			var wasClicked = false;
+			var button = new Button ("Click Me");
+			button.Clicked += () => wasClicked = !wasClicked;
+			var win = new Window () { Width = Dim.Fill (), Height = Dim.Fill () };
+			win.Add (button);
+			Application.Top.Add (win);
+
+			var iterations = 0;
+
+			Application.Iteration += () => {
+				iterations++;
+
+				button.ProcessKey (new KeyEvent (Key.Enter, null));
+				Assert.True (wasClicked);
+				button.MouseEvent (new MouseEvent () { Flags = MouseFlags.Button1Clicked });
+				Assert.False (wasClicked);
+				Assert.True (button.Enabled);
+				Assert.True (button.CanFocus);
+				Assert.True (button.HasFocus);
+				Assert.True (win.Enabled);
+				Assert.True (win.CanFocus);
+				Assert.True (win.HasFocus);
+
+				win.Enabled = false;
+				button.ProcessKey (new KeyEvent (Key.Enter, null));
+				Assert.False (wasClicked);
+				button.MouseEvent (new MouseEvent () { Flags = MouseFlags.Button1Clicked });
+				Assert.False (wasClicked);
+				Assert.False (button.Enabled);
+				Assert.True (button.CanFocus);
+				Assert.False (button.HasFocus);
+				Assert.False (win.Enabled);
+				Assert.True (win.CanFocus);
+				Assert.False (win.HasFocus);
+				button.SetFocus ();
+				Assert.False (button.HasFocus);
+				Assert.False (win.HasFocus);
+				win.SetFocus ();
+				Assert.False (button.HasFocus);
+				Assert.False (win.HasFocus);
+
+				win.Enabled = true;
+				win.FocusFirst ();
+				Assert.True (button.HasFocus);
+				Assert.True (win.HasFocus);
+
+				Application.RequestStop ();
+			};
+
+			Application.Run ();
+
+			Assert.Equal (1, iterations);
+		}
+
+		[Fact]
+		[AutoInitShutdown]
+		public void Visible_Sets_Also_Sets_Subviews ()
+		{
+			var button = new Button ("Click Me");
+			var win = new Window () { Width = Dim.Fill (), Height = Dim.Fill () };
+			win.Add (button);
+			var top = Application.Top;
+			top.Add (win);
+
+			var iterations = 0;
+
+			Application.Iteration += () => {
+				iterations++;
+
+				Assert.True (button.Visible);
+				Assert.True (button.CanFocus);
+				Assert.True (button.HasFocus);
+				Assert.True (win.Visible);
+				Assert.True (win.CanFocus);
+				Assert.True (win.HasFocus);
+				Assert.True (RunesCount () > 0);
+
+				win.Visible = false;
+				Assert.True (button.Visible);
+				Assert.True (button.CanFocus);
+				Assert.False (button.HasFocus);
+				Assert.False (win.Visible);
+				Assert.True (win.CanFocus);
+				Assert.False (win.HasFocus);
+				button.SetFocus ();
+				Assert.False (button.HasFocus);
+				Assert.False (win.HasFocus);
+				win.SetFocus ();
+				Assert.False (button.HasFocus);
+				Assert.False (win.HasFocus);
+				top.Redraw (top.Bounds);
+				Assert.True (RunesCount () == 0);
+
+				win.Visible = true;
+				win.FocusFirst ();
+				Assert.True (button.HasFocus);
+				Assert.True (win.HasFocus);
+				top.Redraw (top.Bounds);
+				Assert.True (RunesCount () > 0);
+
+				Application.RequestStop ();
+			};
+
+			Application.Run ();
+
+			Assert.Equal (1, iterations);
+
+			int RunesCount ()
+			{
+				var contents = ((FakeDriver)Application.Driver).Contents;
+				var runesCount = 0;
+
+				for (int i = 0; i < Application.Driver.Rows; i++) {
+					for (int j = 0; j < Application.Driver.Cols; j++) {
+						if (contents [i, j, 0] != ' ') {
+							runesCount++;
+						}
+					}
+				}
+				return runesCount;
+			}
+		}
 	}
 }

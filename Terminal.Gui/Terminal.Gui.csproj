@@ -15,8 +15,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <!-- <None Remove="ConsoleDrivers\#ConsoleDriver.cs#" /> -->
+	  <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>UnitTests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
-
+  <PropertyGroup>
+      <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
+  </PropertyGroup>
   <PropertyGroup>
     <!-- See Terminal.Gui/README.md for how version numbering works -->
     <!-- This enables prefixing version tags with v, e.g. v1.0.0 Instead of 1.0.0 -->

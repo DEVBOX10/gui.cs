@@ -165,7 +165,7 @@ namespace Terminal.Gui {
 		public override void Redraw (Rect bounds)
 		{
 			Move (0, 0);
-			Driver.SetAttribute (ColorScheme.Normal);
+			Driver.SetAttribute (GetNormalColor ());
 
 			if (Style.ShowBorder) {
 
@@ -179,6 +179,7 @@ namespace Terminal.Gui {
 
 			if (Tabs.Any ()) {
 				tabsBar.Redraw (tabsBar.Bounds);
+				contentView.SetNeedsDisplay();
 				contentView.Redraw (contentView.Bounds);
 			}
 		}
@@ -485,7 +486,7 @@ namespace Terminal.Gui {
 
 				var tabLocations = host.CalculateViewport (bounds).ToArray ();
 				var width = bounds.Width;
-				Driver.SetAttribute (ColorScheme.Normal);
+				Driver.SetAttribute (GetNormalColor ());
 
 				if (host.Style.ShowTopLine) {
 					RenderOverline (tabLocations, width);
@@ -494,7 +495,7 @@ namespace Terminal.Gui {
 				RenderTabLine (tabLocations, width);
 
 				RenderUnderline (tabLocations, width);
-				Driver.SetAttribute (ColorScheme.Normal);
+				Driver.SetAttribute (GetNormalColor ());
 
 
 			}
@@ -588,7 +589,7 @@ namespace Terminal.Gui {
 
 
 					Driver.AddStr (toRender.TextToRender);
-					Driver.SetAttribute (ColorScheme.Normal);
+					Driver.SetAttribute (GetNormalColor ());
 
 					if (toRender.IsSelected) {
 						Driver.AddRune (Driver.VLine);

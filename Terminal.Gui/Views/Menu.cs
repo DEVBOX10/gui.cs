@@ -166,7 +166,7 @@ namespace Terminal.Gui {
 		/// <summary>
 		/// Gets if this <see cref="MenuItem"/> is from a sub-menu.
 		/// </summary>
-		internal bool IsFromSubMenu { get {return Parent != null; } }
+		internal bool IsFromSubMenu { get { return Parent != null; } }
 
 		/// <summary>
 		/// Merely a debugging aid to see the interaction with main
@@ -274,7 +274,7 @@ namespace Terminal.Gui {
 		/// <summary>
 		/// Initializes a new <see cref="MenuBarItem"/>.
 		/// </summary>
-		public MenuBarItem () : this (children: new MenuItem [] { }) {  }
+		public MenuBarItem () : this (children: new MenuItem [] { }) { }
 
 		//static int GetMaxTitleLength (MenuItem [] children)
 		//{
@@ -426,17 +426,18 @@ namespace Terminal.Gui {
 				if (index == current) return ColorScheme.Focus;
 				if (!item.IsEnabled ()) return ColorScheme.Disabled;
 			}
-			return ColorScheme.Normal;
+			return GetNormalColor ();
 		}
 
 		public override void Redraw (Rect bounds)
 		{
-			Driver.SetAttribute (ColorScheme.Normal);
+			Driver.SetAttribute (GetNormalColor ());
 			DrawFrame (bounds, padding: 0, fill: true);
 
 			for (int i = 0; i < barItems.Children.Length; i++) {
 				var item = barItems.Children [i];
-				Driver.SetAttribute (item == null ? ColorScheme.Normal : i == current ? ColorScheme.Focus : ColorScheme.Normal);
+				Driver.SetAttribute (item == null ? GetNormalColor ()
+					: i == current ? ColorScheme.Focus : GetNormalColor ());
 				if (item == null) {
 					Move (0, i + 1);
 					Driver.AddRune (Driver.LeftTee);
@@ -447,7 +448,7 @@ namespace Terminal.Gui {
 				for (int p = 0; p < Frame.Width - 2; p++)
 					if (item == null)
 						Driver.AddRune (Driver.HLine);
-					else if (p == Frame.Width - 3 && barItems.SubMenu(barItems.Children [i]) != null)
+					else if (p == Frame.Width - 3 && barItems.SubMenu (barItems.Children [i]) != null)
 						Driver.AddRune (Driver.RightArrow);
 					else
 						Driver.AddRune (' ');
@@ -482,7 +483,7 @@ namespace Terminal.Gui {
 				else
 					DrawHotString (textToDraw,
 					       i == current ? ColorScheme.HotFocus : ColorScheme.HotNormal,
-					       i == current ? ColorScheme.Focus : ColorScheme.Normal);
+					       i == current ? ColorScheme.Focus : GetNormalColor ());
 
 				// The help string
 				var l = item.ShortcutTag.RuneCount == 0 ? item.Help.RuneCount : item.Help.RuneCount + item.ShortcutTag.RuneCount + 2;
@@ -905,7 +906,7 @@ namespace Terminal.Gui {
 		public override void Redraw (Rect bounds)
 		{
 			Move (0, 0);
-			Driver.SetAttribute (ColorScheme.Normal);
+			Driver.SetAttribute (GetNormalColor ());
 			for (int i = 0; i < Frame.Width; i++)
 				Driver.AddRune (' ');
 
@@ -916,15 +917,16 @@ namespace Terminal.Gui {
 				var menu = Menus [i];
 				Move (pos, 0);
 				Attribute hotColor, normalColor;
-				if (i == selected) {
+				if (i == selected && IsMenuOpen) {
 					hotColor = i == selected ? ColorScheme.HotFocus : ColorScheme.HotNormal;
-					normalColor = i == selected ? ColorScheme.Focus : ColorScheme.Normal;
+					normalColor = i == selected ? ColorScheme.Focus :
+						GetNormalColor ();
 				} else if (openedByAltKey) {
 					hotColor = ColorScheme.HotNormal;
-					normalColor = ColorScheme.Normal;
+					normalColor = GetNormalColor ();
 				} else {
-					hotColor = ColorScheme.Normal;
-					normalColor = ColorScheme.Normal;
+					hotColor = GetNormalColor ();
+					normalColor = GetNormalColor ();
 				}
 				DrawHotString (menu.Help.IsEmpty ? $" {menu.Title}  " : $" {menu.Title}  {menu.Help}  ", hotColor, normalColor);
 				pos += 1 + menu.TitleLength + (menu.Help.Length > 0 ? menu.Help.Length + 2 : 0) + 2;
@@ -966,7 +968,7 @@ namespace Terminal.Gui {
 		/// <summary>
 		/// Raised as a menu is opening.
 		/// </summary>
-		public event Action MenuOpening;
+		public event Action<MenuOpeningEventArgs> MenuOpening;
 
 		/// <summary>
 		/// Raised when a menu is closing.
@@ -986,11 +988,15 @@ namespace Terminal.Gui {
 		public bool IsMenuOpen { get; protected set; }
 
 		/// <summary>
-		/// Virtual method that will invoke the <see cref="MenuOpening"/>
+		/// Virtual method that will invoke the <see cref="MenuOpening"/> event if it's defined.
 		/// </summary>
-		public virtual void OnMenuOpening ()
+		/// <param name="currentMenu">The current menu to be replaced.</param>
+		/// <returns>Returns the <see cref="MenuOpeningEventArgs"/></returns>
+		public virtual MenuOpeningEventArgs OnMenuOpening (MenuBarItem currentMenu)
 		{
-			MenuOpening?.Invoke ();
+			var ev = new MenuOpeningEventArgs (currentMenu);
+			MenuOpening?.Invoke (ev);
+			return ev;
 		}
 
 		/// <summary>
@@ -1011,11 +1017,17 @@ namespace Terminal.Gui {
 		internal void OpenMenu (int index, int sIndex = -1, MenuBarItem subMenu = null)
 		{
 			isMenuOpening = true;
-			OnMenuOpening ();
+			var newMenu = OnMenuOpening (Menus [index]);
+			if (newMenu.Cancel) {
+				return;
+			}
+			if (newMenu.NewMenuBarItem != null && Menus [index].Title == newMenu.NewMenuBarItem.Title) {
+				Menus [index] = newMenu.NewMenuBarItem;
+			}
 			int pos = 0;
 			switch (subMenu) {
 			case null:
-				lastFocused = lastFocused ?? SuperView.MostFocused;
+				lastFocused = lastFocused ?? SuperView?.MostFocused;
 				if (openSubMenu != null)
 					CloseMenu (false, true);
 				if (openMenu != null) {
@@ -1165,7 +1177,7 @@ namespace Terminal.Gui {
 				}
 				LastFocused = lastFocused;
 				lastFocused = null;
-				if (LastFocused != null) {
+				if (LastFocused != null && LastFocused.CanFocus) {
 					if (!reopen) {
 						selected = -1;
 					}
@@ -1460,7 +1472,7 @@ namespace Terminal.Gui {
 			case Key.CursorDown:
 			case Key.Enter:
 				if (selected > -1) {
-					ProcessMenu (selected, Menus [selected]); 
+					ProcessMenu (selected, Menus [selected]);
 				}
 				break;
 
@@ -1636,6 +1648,34 @@ namespace Terminal.Gui {
 			Application.Driver.SetCursorVisibility (CursorVisibility.Invisible);
 
 			return base.OnEnter (view);
+		}
+	}
+
+	/// <summary>
+	/// An <see cref="EventArgs"/> which allows passing a cancelable menu opening event or replacing with a new <see cref="MenuBarItem"/>.
+	/// </summary>
+	public class MenuOpeningEventArgs : EventArgs {
+		/// <summary>
+		/// The current <see cref="MenuBarItem"/> parent.
+		/// </summary>
+		public MenuBarItem CurrentMenu { get; }
+
+		/// <summary>
+		/// The new <see cref="MenuBarItem"/> to be replaced.
+		/// </summary>
+		public MenuBarItem NewMenuBarItem { get; set; }
+		/// <summary>
+		/// Flag that allows you to cancel the opening of the menu.
+		/// </summary>
+		public bool Cancel { get; set; }
+
+		/// <summary>
+		/// Initializes a new instance of <see cref="MenuOpeningEventArgs"/>
+		/// </summary>
+		/// <param name="currentMenu">The current <see cref="MenuBarItem"/> parent.</param>
+		public MenuOpeningEventArgs (MenuBarItem currentMenu)
+		{
+			CurrentMenu = currentMenu;
 		}
 	}
 }

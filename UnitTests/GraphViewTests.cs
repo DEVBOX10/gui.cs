@@ -116,6 +116,53 @@ namespace Terminal.Gui.Views {
 			}
 		}
 
+#pragma warning disable xUnit1013 // Public method should be marked as test
+		/// <summary>
+		/// Verifies the console was rendered using the given <paramref name="expectedColors"/> at the given locations.
+		/// Pass a bitmap of indexes into <paramref name="expectedColors"/> as <paramref name="expectedLook"/> and the
+		/// test method will verify those colors were used in the row/col of the console during rendering
+		/// </summary>
+		/// <param name="expectedLook">Numbers between 0 and 9 for each row/col of the console.  Must be valid indexes of <paramref name="expectedColors"/></param>
+		/// <param name="expectedColors"></param>
+		public static void AssertDriverColorsAre (string expectedLook, Attribute[] expectedColors)
+		{
+#pragma warning restore xUnit1013 // Public method should be marked as test
+
+			if(expectedColors.Length > 10) {
+				throw new ArgumentException ("This method only works for UIs that use at most 10 colors");
+			}
+
+			expectedLook = expectedLook.Trim ();
+			var driver = ((FakeDriver)Application.Driver);
+
+			var contents = driver.Contents;
+
+			int r = 0;
+			foreach(var line in expectedLook.Split ('\n').Select(l=>l.Trim())) {
+
+				for (int c = 0; c < line.Length; c++) {
+
+					int val = contents [r, c, 1];
+
+					var match = expectedColors.Where (e => e.Value == val).ToList ();
+					if (match.Count == 0) {
+						throw new Exception ($"Unexpected color {val} was used at row {r} and col {c}.  Color value was {val} (expected colors were {string.Join (",", expectedColors.Select (c => c.Value))})");
+					} else if (match.Count > 1) {
+						throw new ArgumentException ($"Bad value for expectedColors, {match.Count} Attributes had the same Value");
+					}
+
+					var colorUsed = Array.IndexOf(expectedColors,match[0]).ToString()[0];
+					var userExpected = line [c];
+
+					if( colorUsed != userExpected) {
+						throw new Exception ($"Colors used did not match expected at row {r} and col {c}.  Color index used was {colorUsed} but test expected {userExpected} (these are indexes into the expectedColors array)");
+					}
+				}
+
+				r++;
+			}
+		}
+
 		#region Screen to Graph Tests
 
 		[Fact]
@@ -1381,6 +1428,56 @@ namespace Terminal.Gui.Views {
 
 			// Shutdown must be called to safely clean up Application if Init has been called
 			Application.Shutdown ();
+		}
+
+		[Theory]
+		[InlineData (true)]
+		[InlineData (false)]
+		public void LabelChangeText_RendersCorrectly (bool useFill)
+		{
+			var driver = new FakeDriver ();
+			Application.Init (driver, new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+			driver.Init (() => { });
+
+			// create a wide window
+			var mount = new View () {
+				Width = 100,
+				Height = 100
+			};
+
+			try {
+				// Create a label with a short text 
+				var lbl1 = new Label ("ff");
+
+				// Specify that the label should be very wide
+				if (useFill) {
+					lbl1.Width = Dim.Fill ();
+				} else {
+					lbl1.Width = 100;
+				}
+
+				//put label into view
+				mount.Add (lbl1);
+
+				// render view
+				lbl1.ColorScheme = new ColorScheme ();
+				Assert.Equal (1, lbl1.Height);
+				mount.Redraw (mount.Bounds);
+
+				// should have the initial text
+				GraphViewTests.AssertDriverContentsAre ("ff", null);
+
+				// change the text and redraw
+				lbl1.Text = "ff1234";
+				mount.Redraw (mount.Bounds);
+
+				// should have the new text rendered
+				GraphViewTests.AssertDriverContentsAre ("ff1234", null);
+
+
+			} finally {
+				Application.Shutdown ();
+			}
 		}
 	}
 

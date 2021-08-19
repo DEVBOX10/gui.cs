@@ -38,15 +38,10 @@ namespace Terminal.Gui {
 
 		public bool LoadFile (string file)
 		{
-			if (file == null)
-				throw new ArgumentNullException (nameof (file));
-			try {
-				FilePath = file;
-				var stream = File.OpenRead (file);
-			} catch {
-				return false;
-			}
-			LoadStream (File.OpenRead (file));
+			FilePath = file ?? throw new ArgumentNullException (nameof (file));
+
+			var stream = File.OpenRead (file);
+			LoadStream (stream);
 			return true;
 		}
 
@@ -54,12 +49,9 @@ namespace Terminal.Gui {
 		{
 			if (FilePath == null)
 				throw new ArgumentNullException (nameof (FilePath));
-			try {
-				FilePath = null;
-				lines = new List<List<Rune>> ();
-			} catch {
-				return false;
-			}
+
+			FilePath = null;
+			lines = new List<List<Rune>> ();
 			return true;
 		}
 
@@ -79,14 +71,21 @@ namespace Terminal.Gui {
 		{
 			var lines = new List<List<Rune>> ();
 			int start = 0, i = 0;
+			var hasCR = false;
+			// ASCII code 13 = Carriage Return.
 			// ASCII code 10 = Line Feed.
 			for (; i < content.Length; i++) {
+				if (content [i] == 13) {
+					hasCR = true;
+					continue;
+				}
 				if (content [i] == 10) {
 					if (i - start > 0)
-						lines.Add (ToRunes (content [start, i]));
+						lines.Add (ToRunes (content [start, hasCR ? i - 1 : i]));
 					else
 						lines.Add (ToRunes (ustring.Empty));
 					start = i + 1;
+					hasCR = false;
 				}
 			}
 			if (i - start >= 0)
@@ -109,16 +108,23 @@ namespace Terminal.Gui {
 			var buff = new BufferedStream (input);
 			int v;
 			var line = new List<byte> ();
+			var wasNewLine = false;
 			while ((v = buff.ReadByte ()) != -1) {
+				if (v == 13) {
+					continue;
+				}
 				if (v == 10) {
 					Append (line);
 					line.Clear ();
+					wasNewLine = true;
 					continue;
 				}
 				line.Add ((byte)v);
+				wasNewLine = false;
 			}
-			if (line.Count > 0)
+			if (line.Count > 0 || wasNewLine)
 				Append (line);
+			buff.Dispose ();
 		}
 
 		public void LoadString (ustring content)
@@ -200,7 +206,7 @@ namespace Terminal.Gui {
 			last = last < lines.Count ? last : lines.Count;
 			for (int i = first; i < last; i++) {
 				var line = GetLine (i);
-				var tabSum = line.Sum (r => r == '\t' ? tabWidth - 1 : 0);
+				var tabSum = line.Sum (r => r == '\t' ? Math.Max (tabWidth - 1, 0) : 0);
 				var l = line.Count + tabSum;
 				if (l > maxLength) {
 					maxLength = l;
@@ -230,7 +236,7 @@ namespace Terminal.Gui {
 			for (int i = start; i < t.Count; i++) {
 				var r = t [i];
 				size += Rune.ColumnWidth (r);
-				if (r == '\t' && tabWidth > 0) {
+				if (r == '\t') {
 					size += tabWidth + 1;
 				}
 				if (i == pX || (size > pX)) {
@@ -255,7 +261,7 @@ namespace Terminal.Gui {
 				var rune = t [i];
 				size += Rune.ColumnWidth (rune);
 				len += Rune.RuneLen (rune);
-				if (rune == '\t' && tabWidth > 0) {
+				if (rune == '\t') {
 					size += tabWidth + 1;
 					len += tabWidth - 1;
 				}
@@ -270,7 +276,7 @@ namespace Terminal.Gui {
 			{
 				s = Rune.ColumnWidth (r);
 				l = Rune.RuneLen (r);
-				if (r == '\t' && tWidth > 0) {
+				if (r == '\t') {
 					s += tWidth + 1;
 					l += tWidth - 1;
 				}
@@ -297,10 +303,7 @@ namespace Terminal.Gui {
 				if (rune == '\t') {
 					size += tabWidth + 1;
 				}
-				if (size > width) {
-					if (end == t.Count) {
-						col++;
-					}
+				if (size >= width) {
 					break;
 				} else if (end < t.Count && col > 0 && start < end && col == start) {
 					break;
@@ -342,7 +345,8 @@ namespace Terminal.Gui {
 			if (toFind.found) {
 				toFind.currentPointToFind.X++;
 			}
-			var foundPos = GetFoundPreviousTextPoint (text, toFind.currentPointToFind.Y, matchCase, matchWholeWord, toFind.currentPointToFind);
+			var linesCount = toFind.currentPointToFind.IsEmpty ? lines.Count - 1 : toFind.currentPointToFind.Y;
+			var foundPos = GetFoundPreviousTextPoint (text, linesCount, matchCase, matchWholeWord, toFind.currentPointToFind);
 			if (!foundPos.found && toFind.currentPointToFind != toFind.startPointToFind) {
 				foundPos = GetFoundPreviousTextPoint (text, lines.Count - 1, matchCase, matchWholeWord,
 					new Point (lines [lines.Count - 1].Count, lines.Count));
@@ -359,23 +363,41 @@ namespace Terminal.Gui {
 
 			for (int i = 0; i < lines.Count; i++) {
 				var x = lines [i];
+				var txt = GetText (x);
+				var matchText = !matchCase ? text.ToUpper ().ToString () : text.ToString ();
+				var col = txt.IndexOf (matchText);
+				while (col > -1) {
+					if (matchWholeWord && !MatchWholeWord (txt, matchText, col)) {
+						if (col + 1 > txt.Length) {
+							break;
+						}
+						col = txt.IndexOf (matchText, col + 1);
+						continue;
+					}
+					if (col > -1) {
+						if (!found) {
+							found = true;
+						}
+						lines [i] = ReplaceText (x, textToReplace, matchText, col).ToRuneList ();
+						x = lines [i];
+						txt = GetText (x);
+						pos = new Point (col, i);
+						col += (textToReplace.Length - matchText.Length);
+					}
+					if (col + 1 > txt.Length) {
+						break;
+					}
+					col = txt.IndexOf (matchText, col + 1);
+				}
+			}
+
+			string GetText (List<Rune> x)
+			{
 				var txt = ustring.Make (x).ToString ();
 				if (!matchCase) {
 					txt = txt.ToUpper ();
 				}
-				var matchText = !matchCase ? text.ToUpper ().ToString () : text.ToString ();
-				var col = txt.IndexOf (matchText);
-				if (col > -1 && matchWholeWord && !MatchWholeWord (txt, matchText, col)) {
-					continue;
-				}
-				if (col > -1) {
-					if (!found) {
-						found = true;
-					}
-					pos = new Point (col, i);
-					lines [i] = ReplaceText (x, textToReplace, matchText, col).ToRuneList ();
-					i--;
-				}
+				return txt;
 			}
 
 			return (pos, found);
@@ -447,11 +469,11 @@ namespace Terminal.Gui {
 					start.X = Math.Max (x.Count - 1, 0);
 				}
 				var matchText = !matchCase ? text.ToUpper ().ToString () : text.ToString ();
-				var col = txt.LastIndexOf (matchText, start.X);
+				var col = txt.LastIndexOf (matchText, toFind.found ? start.X - 1 : start.X);
 				if (col > -1 && matchWholeWord && !MatchWholeWord (txt, matchText, col)) {
 					continue;
 				}
-				if (col > -1 && ((i == linesCount && col <= start.X)
+				if (col > -1 && ((i <= linesCount && col <= start.X)
 					|| i < start.Y)
 					&& txt.Contains (matchText)) {
 					return (new Point (col, i), true);
@@ -873,6 +895,7 @@ namespace Terminal.Gui {
 		bool wordWrap;
 		WordWrapManager wrapManager;
 		bool continuousFind;
+		int bottomOffset, rightOffset;
 		int tabWidth = 4;
 		bool allowsTab = true;
 		bool allowsReturn = true;
@@ -1103,13 +1126,31 @@ namespace Terminal.Gui {
 		/// The bottom offset needed to use a horizontal scrollbar or for another reason.
 		/// This is only needed with the keyboard navigation.
 		/// </summary>
-		public int BottomOffset { get; set; }
+		public int BottomOffset {
+			get => bottomOffset;
+			set {
+				if (currentRow == Lines - 1 && bottomOffset > 0 && value == 0) {
+					topRow = Math.Max (topRow - bottomOffset, 0);
+				}
+				bottomOffset = value;
+				Adjust ();
+			}
+		}
 
 		/// <summary>
 		/// The right offset needed to use a vertical scrollbar or for another reason.
 		/// This is only needed with the keyboard navigation.
 		/// </summary>
-		public int RightOffset { get; set; }
+		public int RightOffset {
+			get => rightOffset;
+			set {
+				if (currentColumn == GetCurrentLine ().Count && rightOffset > 0 && value == 0) {
+					leftColumn = Math.Max (leftColumn - rightOffset, 0);
+				}
+				rightOffset = value;
+				Adjust ();
+			}
+		}
 
 		/// <summary>
 		/// Gets or sets a value indicating whether pressing ENTER in a <see cref="TextView"/>
@@ -1126,6 +1167,7 @@ namespace Terminal.Gui {
 					Multiline = false;
 					AllowsTab = false;
 				}
+				SetNeedsDisplay ();
 			}
 		}
 
@@ -1143,12 +1185,10 @@ namespace Terminal.Gui {
 				if (allowsTab && !multiline) {
 					Multiline = true;
 				}
-				if (!allowsTab && multiline) {
-					Multiline = false;
-				}
 				if (!allowsTab && tabWidth > 0) {
 					tabWidth = 0;
 				}
+				SetNeedsDisplay ();
 			}
 		}
 
@@ -1159,12 +1199,10 @@ namespace Terminal.Gui {
 			get => tabWidth;
 			set {
 				tabWidth = Math.Max (value, 0);
-				if (tabWidth == 0 && AllowsTab) {
-					AllowsTab = false;
-				}
 				if (tabWidth > 0 && !AllowsTab) {
 					AllowsTab = true;
 				}
+				SetNeedsDisplay ();
 			}
 		}
 
@@ -1214,22 +1252,27 @@ namespace Terminal.Gui {
 			return SelectedText.Length;
 		}
 
-		CursorVisibility savedCursorVisibility = CursorVisibility.Default;
+		CursorVisibility savedCursorVisibility;
 
 		void SaveCursorVisibility ()
 		{
 			if (desiredCursorVisibility != CursorVisibility.Invisible) {
-				savedCursorVisibility = desiredCursorVisibility;
+				if (savedCursorVisibility == 0) {
+					savedCursorVisibility = desiredCursorVisibility;
+				}
 				DesiredCursorVisibility = CursorVisibility.Invisible;
 			}
 		}
 
 		void ResetCursorVisibility ()
 		{
-			if (savedCursorVisibility != desiredCursorVisibility) {
+			if (savedCursorVisibility == 0) {
+				savedCursorVisibility = desiredCursorVisibility;
+			}
+			if (savedCursorVisibility != desiredCursorVisibility && !HasFocus) {
 				DesiredCursorVisibility = savedCursorVisibility;
 				savedCursorVisibility = CursorVisibility.Default;
-			} else {
+			} else if (desiredCursorVisibility != CursorVisibility.Underline) {
 				DesiredCursorVisibility = CursorVisibility.Underline;
 			}
 		}
@@ -1241,10 +1284,8 @@ namespace Terminal.Gui {
 		/// <param name="path">Path to the file to load.</param>
 		public bool LoadFile (string path)
 		{
-			if (path == null)
-				throw new ArgumentNullException (nameof (path));
-			ResetPosition ();
 			var res = model.LoadFile (path);
+			ResetPosition ();
 			SetNeedsDisplay ();
 			return res;
 		}
@@ -1256,10 +1297,8 @@ namespace Terminal.Gui {
 		/// <param name="stream">Stream to load the contents from.</param>
 		public void LoadStream (Stream stream)
 		{
-			if (stream == null)
-				throw new ArgumentNullException (nameof (stream));
-			ResetPosition ();
 			model.LoadStream (stream);
+			ResetPosition ();
 			SetNeedsDisplay ();
 		}
 
@@ -1269,8 +1308,8 @@ namespace Terminal.Gui {
 		/// <returns><c>true</c>, if stream was closed, <c>false</c> otherwise.</returns>
 		public bool CloseFile ()
 		{
-			ResetPosition ();
 			var res = model.CloseFile ();
+			ResetPosition ();
 			SetNeedsDisplay ();
 			return res;
 		}
@@ -1291,6 +1330,10 @@ namespace Terminal.Gui {
 		/// </summary>
 		public override void PositionCursor ()
 		{
+			if (!CanFocus || !Enabled) {
+				return;
+			}
+
 			if (selecting) {
 				var minRow = Math.Min (Math.Max (Math.Min (selectionStartRow, currentRow) - topRow, 0), Frame.Height);
 				var maxRow = Math.Min (Math.Max (Math.Max (selectionStartRow, currentRow) - topRow, 0), Frame.Height);
@@ -1298,24 +1341,22 @@ namespace Terminal.Gui {
 				SetNeedsDisplay (new Rect (0, minRow, Frame.Width, maxRow));
 			}
 			var line = model.GetLine (currentRow);
-			var retreat = 0;
 			var col = 0;
 			if (line.Count > 0) {
-				retreat = Math.Max (SpecialRune (line [Math.Min (Math.Max (currentColumn - leftColumn - 1, 0), line.Count - 1)])
-					? 1 : 0, 0);
-
 				for (int idx = leftColumn; idx < line.Count; idx++) {
 					if (idx >= currentColumn)
 						break;
 					var cols = Rune.ColumnWidth (line [idx]);
-					if (line [idx] == '\t' && TabWidth > 0) {
+					if (line [idx] == '\t') {
 						cols += TabWidth + 1;
 					}
-					TextModel.SetCol (ref col, Frame.Width, cols);
+					if (!TextModel.SetCol (ref col, Frame.Width, cols)) {
+						col = currentColumn;
+						break;
+					}
 				}
 			}
-			col += retreat;
-			if ((col >= leftColumn || col < Frame.Width)
+			if (col >= leftColumn && currentColumn - leftColumn + RightOffset < Frame.Width
 				&& topRow <= currentRow && currentRow - topRow + BottomOffset < Frame.Height) {
 				ResetCursorVisibility ();
 				Move (col, currentRow - topRow);
@@ -1333,17 +1374,46 @@ namespace Terminal.Gui {
 			}
 		}
 
-		void ColorNormal ()
+		/// <summary>
+		/// Sets the driver to the default color for the control where no text is being rendered.  Defaults to <see cref="ColorScheme.Normal"/>.
+		/// </summary>
+		protected virtual void ColorNormal ()
 		{
-			Driver.SetAttribute (ColorScheme.Normal);
+			Driver.SetAttribute (GetNormalColor ());
 		}
 
-		void ColorSelection ()
+		/// <summary>
+		/// Sets the <see cref="View.Driver"/> to an appropriate color for rendering the given <paramref name="idx"/> of the
+		/// current <paramref name="line"/>.  Override to provide custom coloring by calling <see cref="ConsoleDriver.SetAttribute(Attribute)"/>
+		/// Defaults to <see cref="ColorScheme.Normal"/>.
+		/// </summary>
+		/// <param name="line"></param>
+		/// <param name="idx"></param>
+		protected virtual void ColorNormal (List<Rune> line, int idx)
+		{
+			Driver.SetAttribute (GetNormalColor ());
+		}
+
+		/// <summary>
+		/// Sets the <see cref="View.Driver"/> to an appropriate color for rendering the given <paramref name="idx"/> of the
+		/// current <paramref name="line"/>.  Override to provide custom coloring by calling <see cref="ConsoleDriver.SetAttribute(Attribute)"/>
+		/// Defaults to <see cref="ColorScheme.Focus"/>.
+		/// </summary>
+		/// <param name="line"></param>
+		/// <param name="idx"></param>
+		protected virtual void ColorSelection (List<Rune> line, int idx)
 		{
 			Driver.SetAttribute (ColorScheme.Focus);
 		}
 
-		void ColorUsed ()
+		/// <summary>
+		/// Sets the <see cref="View.Driver"/> to an appropriate color for rendering the given <paramref name="idx"/> of the
+		/// current <paramref name="line"/>.  Override to provide custom coloring by calling <see cref="ConsoleDriver.SetAttribute(Attribute)"/>
+		/// Defaults to <see cref="ColorScheme.HotFocus"/>.
+		/// </summary>
+		/// <param name="line"></param>
+		/// <param name="idx"></param>
+		protected virtual void ColorUsed (List<Rune> line, int idx)
 		{
 			Driver.SetAttribute (ColorScheme.HotFocus);
 		}
@@ -1358,6 +1428,7 @@ namespace Terminal.Gui {
 			get => isReadOnly;
 			set {
 				isReadOnly = value;
+				SetNeedsDisplay ();
 			}
 		}
 
@@ -1374,6 +1445,7 @@ namespace Terminal.Gui {
 				}
 
 				desiredCursorVisibility = value;
+				SetNeedsDisplay ();
 			}
 		}
 
@@ -1667,15 +1739,15 @@ namespace Terminal.Gui {
 					var rune = idxCol >= lineRuneCount ? ' ' : line [idxCol];
 					var cols = Rune.ColumnWidth (rune);
 					if (idxCol < line.Count && selecting && PointInSelection (idxCol, idxRow)) {
-						ColorSelection ();
+						ColorSelection (line, idxCol);
 					} else if (idxCol == currentColumn && idxRow == currentRow && !selecting && !Used
 						&& HasFocus && idxCol < lineRuneCount) {
-						ColorUsed ();
+						ColorUsed (line, idxCol);
 					} else {
-						ColorNormal ();
+						ColorNormal (line, idxCol);
 					}
 
-					if (rune == '\t' && TabWidth > 0) {
+					if (rune == '\t') {
 						cols += TabWidth + 1;
 						if (col + cols > right) {
 							cols = right - col;
@@ -1685,10 +1757,8 @@ namespace Terminal.Gui {
 								AddRune (col + i, row, ' ');
 							}
 						}
-					} else if (!SpecialRune (rune)) {
-						AddRune (col, row, rune);
 					} else {
-						col++;
+						AddRune (col, row, rune);
 					}
 					if (!TextModel.SetCol (ref col, bounds.Right, cols)) {
 						break;
@@ -1709,17 +1779,6 @@ namespace Terminal.Gui {
 			}
 
 			PositionCursor ();
-		}
-
-		bool SpecialRune (Rune rune)
-		{
-			switch (rune) {
-			case (uint)Key.Enter:
-			case 0xd:
-				return true;
-			default:
-				return false;
-			}
 		}
 
 		///<inheritdoc/>
@@ -1941,11 +2000,15 @@ namespace Terminal.Gui {
 		///<inheritdoc/>
 		public override bool ProcessKey (KeyEvent kb)
 		{
+			if (!CanFocus) {
+				return true;
+			}
+
 			int restCount;
 			List<Rune> rest;
 
 			// if the user presses Left (without any control keys) and they are at the start of the text
-			if(kb.Key == Key.CursorLeft && currentColumn == 0 && currentRow == 0) {
+			if (kb.Key == Key.CursorLeft && currentColumn == 0 && currentRow == 0) {
 				// do not respond (this lets the key press fall through to navigation system - which usually changes focus backward)
 				return false;
 			}
