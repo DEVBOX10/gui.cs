@@ -294,7 +294,7 @@ namespace Terminal.Gui {
 				return true;
 
 			switch (ShortcutHelper.GetModifiersKey (keyEvent)) {
-			case Key.Q | Key.CtrlMask:
+			case Key k when k == Application.QuitKey:
 				// FIXED: stop current execution of this container
 				if (Application.MdiTop != null) {
 					Application.MdiTop.RequestStop ();
@@ -342,11 +342,12 @@ namespace Terminal.Gui {
 			case Key.Tab | Key.CtrlMask:
 			case Key key when key == Application.AlternateForwardKey: // Needed on Unix
 				if (Application.MdiTop == null) {
-					Application.Top.FocusNext ();
-					if (Application.Top.Focused == null) {
-						Application.Top.FocusNext ();
+					var top = Modal ? this : Application.Top;
+					top.FocusNext ();
+					if (top.Focused == null) {
+						top.FocusNext ();
 					}
-					Application.Top.SetNeedsDisplay ();
+					top.SetNeedsDisplay ();
 				} else {
 					MoveNext ();
 				}
@@ -354,11 +355,12 @@ namespace Terminal.Gui {
 			case Key.Tab | Key.ShiftMask | Key.CtrlMask:
 			case Key key when key == Application.AlternateBackwardKey: // Needed on Unix
 				if (Application.MdiTop == null) {
-					Application.Top.FocusPrev ();
-					if (Application.Top.Focused == null) {
-						Application.Top.FocusPrev ();
+					var top = Modal ? this : Application.Top;
+					top.FocusPrev ();
+					if (top.Focused == null) {
+						top.FocusPrev ();
 					}
-					Application.Top.SetNeedsDisplay ();
+					top.SetNeedsDisplay ();
 				} else {
 					MovePrevious ();
 				}

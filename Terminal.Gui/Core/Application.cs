@@ -118,11 +118,9 @@ namespace Terminal.Gui {
 				if (Driver == null) {
 					throw new ArgumentNullException ("The driver must be initialized first.");
 				}
-				if (Driver.HeightAsBuffer != value) {
 					Driver.HeightAsBuffer = value;
 				}
 			}
-		}
 
 		/// <summary>
 		/// Used only by <see cref="NetDriver"/> to forcing always moving the cursor position when writing to the screen.
@@ -150,6 +148,10 @@ namespace Terminal.Gui {
 		/// Alternative key to navigate backwards through all views. Shift+Ctrl+Tab is always used.
 		/// </summary>
 		public static Key AlternateBackwardKey { get; set; } = Key.PageUp | Key.CtrlMask;
+		/// <summary>
+		/// Gets or sets the key to quit the application.
+		/// </summary>
+		public static Key QuitKey { get; set; } = Key.Q | Key.CtrlMask;
 
 		/// <summary>
 		/// The <see cref="MainLoop"/>  driver for the application
@@ -545,6 +547,7 @@ namespace Terminal.Gui {
 				if (OutsideFrame (new Point (nme.X, nme.Y), mouseGrabView.Frame)) {
 					lastMouseOwnerView?.OnMouseLeave (me);
 				}
+				// System.Diagnostics.Debug.WriteLine ($"{nme.Flags};{nme.X};{nme.Y};{mouseGrabView}");
 				if (mouseGrabView != null) {
 					mouseGrabView.OnMouseEvent (nme);
 					return;
