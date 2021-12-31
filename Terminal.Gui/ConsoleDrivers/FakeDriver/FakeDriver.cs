@@ -35,7 +35,7 @@ namespace Terminal.Gui {
 		/// <summary>
 		/// Assists with testing, the format is rows, columns and 3 values on the last column: Rune, Attribute and Dirty Flag
 		/// </summary>
-		public int [,,] Contents => contents;
+		internal override int [,,] Contents => contents;
 
 		void UpdateOffscreen ()
 		{
@@ -400,13 +400,10 @@ namespace Terminal.Gui {
 
 		void ProcessInput (ConsoleKeyInfo consoleKey)
 		{
+			keyModifiers = new KeyModifiers ();
 			var map = MapKey (consoleKey);
 			if (map == (Key)0xffffffff)
 				return;
-
-			if (keyModifiers == null) {
-				keyModifiers = new KeyModifiers ();
-			}
 
 			if (consoleKey.Modifiers.HasFlag (ConsoleModifiers.Alt)) {
 				keyModifiers.Alt = true;
@@ -420,7 +417,6 @@ namespace Terminal.Gui {
 
 			keyHandler (new KeyEvent (map, keyModifiers));
 			keyUpHandler (new KeyEvent (map, keyModifiers));
-			keyModifiers = new KeyModifiers ();
 		}
 
 		public override Attribute GetAttribute ()
