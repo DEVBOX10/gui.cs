@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class TableView.TableStyle
    ">
-    <meta name="generator" content="docfx 2.58.9.0">
+    <meta name="generator" content="docfx 2.59.0.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -341,6 +341,42 @@ True to render a solid line vertical line between headers
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public bool ShowVerticalHeaderLines { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Terminal_Gui_TableView_TableStyle_SmoothHorizontalScrolling_" data-uid="Terminal.Gui.TableView.TableStyle.SmoothHorizontalScrolling*"></a>
+  <h4 id="Terminal_Gui_TableView_TableStyle_SmoothHorizontalScrolling" data-uid="Terminal.Gui.TableView.TableStyle.SmoothHorizontalScrolling">SmoothHorizontalScrolling</h4>
+  <div class="markdown level1 summary">
+<p>
+Determines how <a class="xref" href="Terminal.Gui.TableView.html#Terminal_Gui_TableView_ColumnOffset">ColumnOffset</a> is updated when scrolling
+right off the end of the currently visible area.
+</p>
+<p>
+If true then when scrolling right the scroll offset is increased the minimum required to show
+the new column.  This may be slow if you have an incredibly large number of columns in
+your table and/or slow <a class="xref" href="Terminal.Gui.TableView.ColumnStyle.html#Terminal_Gui_TableView_ColumnStyle_RepresentationGetter">RepresentationGetter</a> implementations
+</p>
+<p>
+If false then scroll offset is set to the currently selected column (i.e. PageRight).
+</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool SmoothHorizontalScrolling { get; set; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">

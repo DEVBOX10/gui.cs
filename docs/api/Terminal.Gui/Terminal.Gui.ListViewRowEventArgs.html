@@ -5,12 +5,12 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Class RadioGroup.SelectedItemChangedArgs
+    <title>Class ListViewRowEventArgs
    </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Class RadioGroup.SelectedItemChangedArgs
+    <meta name="title" content="Class ListViewRowEventArgs
    ">
-    <meta name="generator" content="docfx 2.58.9.0">
+    <meta name="generator" content="docfx 2.59.0.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -78,20 +78,20 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="Terminal.Gui.RadioGroup.SelectedItemChangedArgs">
+            <article class="content wrap" id="_content" data-uid="Terminal.Gui.ListViewRowEventArgs">
   
   
-  <h1 id="Terminal_Gui_RadioGroup_SelectedItemChangedArgs" data-uid="Terminal.Gui.RadioGroup.SelectedItemChangedArgs" class="text-break">Class RadioGroup.SelectedItemChangedArgs
+  <h1 id="Terminal_Gui_ListViewRowEventArgs" data-uid="Terminal.Gui.ListViewRowEventArgs" class="text-break">Class ListViewRowEventArgs
   </h1>
   <div class="markdown level0 summary">
-Event arguments for the SelectedItemChagned event.
+<span class="xref">System.EventArgs</span> used by the <a class="xref" href="Terminal.Gui.ListView.html#Terminal_Gui_ListView_RowRender">RowRender</a> event.
 </div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">System.EventArgs</span></div>
-    <div class="level2"><span class="xref">RadioGroup.SelectedItemChangedArgs</span></div>
+    <div class="level2"><span class="xref">ListViewRowEventArgs</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -122,21 +122,21 @@ Event arguments for the SelectedItemChagned event.
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Terminal.Gui.html">Terminal.Gui</a></h6>
   <h6><strong>Assembly</strong>: Terminal.Gui.dll</h6>
-  <h5 id="Terminal_Gui_RadioGroup_SelectedItemChangedArgs_syntax">Syntax</h5>
+  <h5 id="Terminal_Gui_ListViewRowEventArgs_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SelectedItemChangedArgs : EventArgs</code></pre>
+    <pre><code class="lang-csharp hljs">public class ListViewRowEventArgs : EventArgs</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
-  <a id="Terminal_Gui_RadioGroup_SelectedItemChangedArgs__ctor_" data-uid="Terminal.Gui.RadioGroup.SelectedItemChangedArgs.#ctor*"></a>
-  <h4 id="Terminal_Gui_RadioGroup_SelectedItemChangedArgs__ctor_System_Int32_System_Int32_" data-uid="Terminal.Gui.RadioGroup.SelectedItemChangedArgs.#ctor(System.Int32,System.Int32)">SelectedItemChangedArgs(Int32, Int32)</h4>
+  <a id="Terminal_Gui_ListViewRowEventArgs__ctor_" data-uid="Terminal.Gui.ListViewRowEventArgs.#ctor*"></a>
+  <h4 id="Terminal_Gui_ListViewRowEventArgs__ctor_System_Int32_" data-uid="Terminal.Gui.ListViewRowEventArgs.#ctor(System.Int32)">ListViewRowEventArgs(Int32)</h4>
   <div class="markdown level1 summary">
-Initializes a new <a class="xref" href="Terminal.Gui.RadioGroup.SelectedItemChangedArgs.html">RadioGroup.SelectedItemChangedArgs</a> class.
+Initializes with the current row.
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SelectedItemChangedArgs(int selectedItem, int previousSelectedItem)</code></pre>
+    <pre><code class="lang-csharp hljs">public ListViewRowEventArgs(int row)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -150,27 +150,22 @@ Initializes a new <a class="xref" href="Terminal.Gui.RadioGroup.SelectedItemChan
     <tbody>
       <tr>
         <td><span class="xref">System.Int32</span></td>
-        <td><span class="parametername">selectedItem</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td><span class="parametername">previousSelectedItem</span></td>
+        <td><span class="parametername">row</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h3 id="properties">Properties
   </h3>
-  <a id="Terminal_Gui_RadioGroup_SelectedItemChangedArgs_PreviousSelectedItem_" data-uid="Terminal.Gui.RadioGroup.SelectedItemChangedArgs.PreviousSelectedItem*"></a>
-  <h4 id="Terminal_Gui_RadioGroup_SelectedItemChangedArgs_PreviousSelectedItem" data-uid="Terminal.Gui.RadioGroup.SelectedItemChangedArgs.PreviousSelectedItem">PreviousSelectedItem</h4>
+  <a id="Terminal_Gui_ListViewRowEventArgs_Row_" data-uid="Terminal.Gui.ListViewRowEventArgs.Row*"></a>
+  <h4 id="Terminal_Gui_ListViewRowEventArgs_Row" data-uid="Terminal.Gui.ListViewRowEventArgs.Row">Row</h4>
   <div class="markdown level1 summary">
-Gets the index of the item that was previously selected. -1 if there was no previous selection.
+The current row being rendered.
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int PreviousSelectedItem { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public int Row { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -187,15 +182,16 @@ Gets the index of the item that was previously selected. -1 if there was no prev
       </tr>
     </tbody>
   </table>
-  <a id="Terminal_Gui_RadioGroup_SelectedItemChangedArgs_SelectedItem_" data-uid="Terminal.Gui.RadioGroup.SelectedItemChangedArgs.SelectedItem*"></a>
-  <h4 id="Terminal_Gui_RadioGroup_SelectedItemChangedArgs_SelectedItem" data-uid="Terminal.Gui.RadioGroup.SelectedItemChangedArgs.SelectedItem">SelectedItem</h4>
+  <a id="Terminal_Gui_ListViewRowEventArgs_RowAttribute_" data-uid="Terminal.Gui.ListViewRowEventArgs.RowAttribute*"></a>
+  <h4 id="Terminal_Gui_ListViewRowEventArgs_RowAttribute" data-uid="Terminal.Gui.ListViewRowEventArgs.RowAttribute">RowAttribute</h4>
   <div class="markdown level1 summary">
-Gets the index of the item that is now selected. -1 if there is no selection.
+The <a class="xref" href="Terminal.Gui.Attribute.html">Attribute</a> used by current row or
+null to maintain the current attribute.
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int SelectedItem { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public Attribute? RowAttribute { get; set; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -207,7 +203,7 @@ Gets the index of the item that is now selected. -1 if there is no selection.
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Int32</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="Terminal.Gui.Attribute.html">Attribute</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>

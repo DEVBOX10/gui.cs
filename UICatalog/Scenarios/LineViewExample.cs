@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Terminal.Gui;
-using Terminal.Gui.Views;
 using static UICatalog.Scenario;
 
 namespace UICatalog.Scenarios {
 
-	[ScenarioMetadata (Name: "Line View", Description: "Demonstrates the LineView control")]
-	[ScenarioCategory ("Controls")]
+	[ScenarioMetadata (Name: "Line View", Description: "Demonstrates drawing lines using the LineView control.")]
+	[ScenarioCategory ("Controls"), ScenarioCategory ("LineView")]
 	public class LineViewExample : Scenario {
 
 		public override void Setup ()

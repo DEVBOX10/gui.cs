@@ -15,9 +15,10 @@ namespace UICatalog.Scenarios {
 	///   - Helps test unicode character rendering in Terminal.Gui
 	///   - Illustrates how to use ScrollView to do infinite scrolling
 	/// </summary>
-	[ScenarioMetadata (Name: "Character Map", Description: "Illustrates a custom control and Unicode")]
-	[ScenarioCategory ("Text")]
+	[ScenarioMetadata (Name: "Character Map", Description: "A Unicode character set viewier built as a custom control using the ScrollView control.")]
+	[ScenarioCategory ("Text and Formatting")]
 	[ScenarioCategory ("Controls")]
+	[ScenarioCategory ("ScrollView")]
 	public class CharacterMap : Scenario {
 		CharMap _charMap;
 		public override void Setup ()
@@ -102,7 +103,7 @@ namespace UICatalog.Scenarios {
 		public const int H_SPACE = 2;
 		public const int V_SPACE = 2;
 
-		public static int MaxCodePointVal => 0xE0FFF;
+		public static int MaxCodePointVal => 0x10FFFF;
 
 		// Row Header + space + (space + char + space)
 		public static int RowHeaderWidth => $"U+{MaxCodePointVal:x5}".Length;
@@ -145,6 +146,9 @@ namespace UICatalog.Scenarios {
 			}
 			for (int row = 0, y = 0; row < viewport.Height / 2 - 1; row++, y+= V_SPACE) {
 				int val = (-viewport.Y + row) * 16;
+				if (val >= 0x00D800 && val <= 0x00DFFF) {
+					continue;
+				}
 				if (val < MaxCodePointVal) {
 					var rowLabel = $"U+{val / 16:x4}x";
 					Move (0, y + 1);
@@ -166,5 +170,28 @@ namespace UICatalog.Scenarios {
 			base.OnDrawContent (viewport);
 		}
 #endif
+
+		public override bool ProcessKey (KeyEvent kb)
+		{
+			if (kb.Key == Key.PageDown) {
+				ContentOffset = new Point (0, ContentOffset.Y - Bounds.Height / 2 + 1);
+				return true;
+			}
+			if (kb.Key == Key.PageUp) {
+				if (ContentOffset.Y + Bounds.Height / 2 - 1 < 0) {
+					ContentOffset = new Point (0, ContentOffset.Y + Bounds.Height / 2 - 1);
+				} else {
+					ContentOffset = Point.Empty;
+				}
+				return true;
+			}
+			return base.ProcessKey (kb);
+		}
+
+		protected override void Dispose (bool disposing)
+		{
+			DrawContent -= CharMap_DrawContent;
+			base.Dispose (disposing);
+		}
 	}
 }
