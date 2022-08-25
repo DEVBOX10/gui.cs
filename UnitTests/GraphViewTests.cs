@@ -9,6 +9,7 @@ using Attribute = Terminal.Gui.Attribute;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
+using Rune = System.Rune;
 
 namespace Terminal.Gui.Views {
 
@@ -51,12 +52,27 @@ namespace Terminal.Gui.Views {
 
 	public class GraphViewTests {
 
+		static string LastInitFakeDriver;
 
 		public static FakeDriver InitFakeDriver ()
 		{
 			var driver = new FakeDriver ();
-			Application.Init (driver, new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+			try {
+				Application.Init (driver, new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+			} catch (InvalidOperationException) {
+
+				// close it so that we don't get a thousand of these errors in a row
+				Application.Shutdown ();
+
+				// but still report a failure and name the test that didn't shut down.  Note
+				// that the test that didn't shutdown won't be the one currently running it will
+				// be the last one
+				throw new Exception ("A test did not call shutdown correctly.  Test stack trace was:" + LastInitFakeDriver);
+			}
+			
 			driver.Init (() => { });
+
+			LastInitFakeDriver = Environment.StackTrace;
 			return driver;
 		}
 
@@ -140,10 +156,13 @@ namespace Terminal.Gui.Views {
 								runes.InsertRange (i, new List<char> () { ' ' });
 							}
 						}
-						if (c > w) {
-							w = c;
+						if (Rune.ColumnWidth (rune) > 1) {
+							c++;
 						}
-						h = r - y;
+						if (c + 1 > w) {
+							w = c + 1;
+						}
+						h = r - y + 1;
 					}
 					if (x > -1) {
 						runes.Add (rune);
@@ -155,15 +174,18 @@ namespace Terminal.Gui.Views {
 			}
 
 			// Remove unnecessary empty lines
-			for (int r = lines.Count - 1; r > h; r--) {
-				lines.RemoveAt (r);
+			if (lines.Count > 0) {
+				for (int r = lines.Count - 1; r > h - 1; r--) {
+					lines.RemoveAt (r);
+				}
 			}
 
 			// Remove trailing whitespace on each line
 			for (int r = 0; r < lines.Count; r++) {
 				List<char> row = lines [r];
 				for (int c = row.Count - 1; c >= 0; c--) {
-					if (row [c] != ' ') {
+					var rune = row [c];
+					if (rune != ' ' || (row.Sum (x => Rune.ColumnWidth (x)) == w)) {
 						break;
 					}
 					row.RemoveAt (c);
@@ -201,7 +223,7 @@ namespace Terminal.Gui.Views {
 
 				Assert.Equal (expectedLook, actualLook);
 			}
-			return new Rect (x, y, w > -1 ? w + 1 : 0, h > -1 ? h + 1 : 0);
+			return new Rect (x > -1 ? x : 0, y > -1 ? y : 0, w > -1 ? w : 0, h > -1 ? h : 0);
 		}
 
 #pragma warning disable xUnit1013 // Public method should be marked as test
@@ -234,7 +256,7 @@ namespace Terminal.Gui.Views {
 
 					var match = expectedColors.Where (e => e.Value == val).ToList ();
 					if (match.Count == 0) {
-						throw new Exception ($"Unexpected color {val} was used at row {r} and col {c}.  Color value was {val} (expected colors were {string.Join (",", expectedColors.Select (c => c.Value))})");
+						throw new Exception ($"Unexpected color {DescribeColor (val)} was used at row {r} and col {c} (indexes start at 0).  Color value was {val} (expected colors were {string.Join (",", expectedColors.Select (c => c.Value))})");
 					} else if (match.Count > 1) {
 						throw new ArgumentException ($"Bad value for expectedColors, {match.Count} Attributes had the same Value");
 					}
@@ -243,12 +265,18 @@ namespace Terminal.Gui.Views {
 					var userExpected = line [c];
 
 					if (colorUsed != userExpected) {
-						throw new Exception ($"Colors used did not match expected at row {r} and col {c}.  Color index used was {colorUsed} but test expected {userExpected} (these are indexes into the expectedColors array)");
+						throw new Exception ($"Colors used did not match expected at row {r} and col {c} (indexes start at 0).  Color index used was {DescribeColor (colorUsed)} but test expected {DescribeColor (userExpected)} (these are indexes into the expectedColors array)");
 					}
 				}
 
 				r++;
 			}
+		}
+
+		private static object DescribeColor (int userExpected)
+		{
+			var a = new Attribute (userExpected);
+			return $"{a.Foreground},{a.Background}";
 		}
 
 		#region Screen to Graph Tests
@@ -1686,6 +1714,11 @@ namespace Terminal.Gui.Views {
 
 				//put label into view
 				mount.Add (lbl1);
+
+				//putting mount into toplevel since changing size
+				//also change AutoSize to false
+				Application.Top.Add (mount);
+				Application.Begin (Application.Top);
 
 				// render view
 				lbl1.ColorScheme = new ColorScheme ();

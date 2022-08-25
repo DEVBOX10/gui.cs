@@ -1,14 +1,23 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Terminal.Gui;
+using Terminal.Gui.Views;
 using Xunit;
+using Xunit.Abstractions;
 
 // Alias Console to MockConsole so we don't accidentally use Console
 using Console = Terminal.Gui.FakeConsole;
 
 namespace Terminal.Gui.ConsoleDrivers {
 	public class ConsoleDriverTests {
+		readonly ITestOutputHelper output;
+
+		public ConsoleDriverTests (ITestOutputHelper output)
+		{
+			this.output = output;
+		}
+
 		[Fact]
 		public void Init_Inits ()
 		{
@@ -339,10 +348,10 @@ namespace Terminal.Gui.ConsoleDrivers {
 			Assert.Equal (25, Application.Driver.Rows);
 			Assert.Equal (120, Console.BufferWidth);
 			Assert.Equal (25, Console.BufferHeight);
-			Assert.Equal (120, Console.WindowWidth);
+			Assert.Equal (80, Console.WindowWidth);
 			Assert.Equal (25, Console.WindowHeight);
 			driver.SetWindowPosition (121, 25);
-			Assert.Equal (0, Console.WindowLeft);
+			Assert.Equal (40, Console.WindowLeft);
 			Assert.Equal (0, Console.WindowTop);
 
 			driver.SetWindowSize (90, 25);
@@ -388,17 +397,19 @@ namespace Terminal.Gui.ConsoleDrivers {
 			Assert.Equal (0, Console.WindowLeft);
 			Assert.Equal (0, Console.WindowTop);
 
-			// MockDriver will now be sets to 120x25
+			// MockDriver will now be sets to 80x40
 			driver.SetBufferSize (80, 40);
 			Assert.Equal (80, Application.Driver.Cols);
 			Assert.Equal (40, Application.Driver.Rows);
 			Assert.Equal (80, Console.BufferWidth);
 			Assert.Equal (40, Console.BufferHeight);
 			Assert.Equal (80, Console.WindowWidth);
-			Assert.Equal (40, Console.WindowHeight);
-			driver.SetWindowPosition (80, 40);
+			Assert.Equal (25, Console.WindowHeight);
 			Assert.Equal (0, Console.WindowLeft);
 			Assert.Equal (0, Console.WindowTop);
+			driver.SetWindowPosition (80, 40);
+			Assert.Equal (0, Console.WindowLeft);
+			Assert.Equal (15, Console.WindowTop);
 
 			driver.SetWindowSize (80, 20);
 			Assert.Equal (80, Application.Driver.Cols);
@@ -407,6 +418,8 @@ namespace Terminal.Gui.ConsoleDrivers {
 			Assert.Equal (40, Console.BufferHeight);
 			Assert.Equal (80, Console.WindowWidth);
 			Assert.Equal (20, Console.WindowHeight);
+			Assert.Equal (0, Console.WindowLeft);
+			Assert.Equal (15, Console.WindowTop);
 			driver.SetWindowPosition (80, 41);
 			Assert.Equal (0, Console.WindowLeft);
 			Assert.Equal (20, Console.WindowTop);
@@ -498,6 +511,102 @@ namespace Terminal.Gui.ConsoleDrivers {
 			Assert.True (endingKeyPress);
 			Assert.True (closed);
 			Assert.Empty (FakeConsole.MockKeyPresses);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void AddRune_On_Clip_Left_Or_Right_Replace_Previous_Or_Next_Wide_Rune_With_Space ()
+		{
+			var tv = new TextView () {
+				Width = Dim.Fill (),
+				Height = Dim.Fill (),
+				Text = @"これは広いルーンラインです。
+これは広いルーンラインです。
+これは広いルーンラインです。
+これは広いルーンラインです。
+これは広いルーンラインです。
+これは広いルーンラインです。
+これは広いルーンラインです。
+これは広いルーンラインです。"
+			};
+			var win = new Window ("ワイドルーン") { Width = Dim.Fill (), Height = Dim.Fill () };
+			win.Add (tv);
+			Application.Top.Add (win);
+			var lbl = new Label ("ワイドルーン。");
+			var dg = new Dialog ("テスト", 14, 4, new Button ("選ぶ"));
+			dg.Add (lbl);
+			Application.Begin (Application.Top);
+			Application.Begin (dg);
+			((FakeDriver)Application.Driver).SetBufferSize (30, 10);
+
+			var expected = @"
+┌ ワイドルーン ──────────────┐
+│これは広いルーンラインです。│
+│これは広いルーンラインです。│
+│これは ┌ テスト ────┐ です。│
+│これは │ワイドルーン│ です。│
+│これは │  [ 選ぶ ]  │ です。│
+│これは └────────────┘ です。│
+│これは広いルーンラインです。│
+│これは広いルーンラインです。│
+└────────────────────────────┘
+";
+
+			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			Assert.Equal (new Rect (0, 0, 30, 10), pos);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void Write_Do_Not_Change_On_ProcessKey ()
+		{
+			var win = new Window ();
+			Application.Begin (win);
+			((FakeDriver)Application.Driver).SetBufferSize (20, 8);
+
+			System.Threading.Tasks.Task.Run (() => {
+				System.Threading.Tasks.Task.Delay (500).Wait ();
+				Application.MainLoop.Invoke (() => {
+					var lbl = new Label ("Hello World") { X = Pos.Center () };
+					var dlg = new Dialog ("Test", new Button ("Ok"));
+					dlg.Add (lbl);
+					Application.Begin (dlg);
+
+					var expected = @"
+┌──────────────────┐
+│┌ Test ─────────┐ │
+││  Hello World  │ │
+││               │ │
+││               │ │
+││    [ Ok ]     │ │
+│└───────────────┘ │
+└──────────────────┘
+";
+
+					var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+					Assert.Equal (new Rect (0, 0, 20, 8), pos);
+
+					Assert.True (dlg.ProcessKey (new KeyEvent (Key.Tab, new KeyModifiers ())));
+					dlg.Redraw (dlg.Bounds);
+
+					expected = @"
+┌──────────────────┐
+│┌ Test ─────────┐ │
+││  Hello World  │ │
+││               │ │
+││               │ │
+││    [ Ok ]     │ │
+│└───────────────┘ │
+└──────────────────┘
+";
+
+					pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+					Assert.Equal (new Rect (0, 0, 20, 8), pos);
+
+					win.RequestStop ();
+				});
+			});
+
+			Application.Run (win);
+			Application.Shutdown ();
 		}
 	}
 }

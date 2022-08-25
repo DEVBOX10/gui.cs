@@ -1,10 +1,10 @@
-name: Build Terminal.Gui with .NET Core
+name: Build & Test Terminal.Gui with .NET Core
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   build:
@@ -22,8 +22,8 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+    - name: Build Debug
+      run: dotnet build --configuration Debug --no-restore
 
     - name: Test
       run: |

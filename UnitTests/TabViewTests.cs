@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -6,20 +6,30 @@ using System.Threading.Tasks;
 using Terminal.Gui;
 using Xunit;
 using System.Globalization;
+using Xunit.Abstractions;
 
 namespace Terminal.Gui.Views {
-  
+
 	public class TabViewTests {
+		readonly ITestOutputHelper output;
+
+		public TabViewTests (ITestOutputHelper output)
+		{
+			this.output = output;
+		}
+
 		private TabView GetTabView ()
 		{
 			return GetTabView (out _, out _);
 		}
 
-		private TabView GetTabView (out TabView.Tab tab1, out TabView.Tab tab2)
+		private TabView GetTabView (out TabView.Tab tab1, out TabView.Tab tab2, bool initFakeDriver = true)
 		{
-			InitFakeDriver ();
+			if (initFakeDriver)
+				InitFakeDriver ();
 
 			var tv = new TabView ();
+			tv.ColorScheme = new ColorScheme ();
 			tv.AddTab (tab1 = new TabView.Tab ("Tab1", new TextField ("hi")), false);
 			tv.AddTab (tab2 = new TabView.Tab ("Tab2", new Label ("hi2")), false);
 			return tv;
@@ -41,7 +51,6 @@ namespace Terminal.Gui.Views {
 
 			Application.Shutdown ();
 		}
-
 
 		[Fact]
 		public void EnsureSelectedTabVisible_NullSelect ()
@@ -82,7 +91,6 @@ namespace Terminal.Gui.Views {
 			Application.Shutdown ();
 		}
 
-
 		[Fact]
 		public void SelectedTabChanged_Called ()
 		{
@@ -109,6 +117,7 @@ namespace Terminal.Gui.Views {
 			// Shutdown must be called to safely clean up Application if Init has been called
 			Application.Shutdown ();
 		}
+
 		[Fact]
 		public void RemoveTab_ChangesSelection ()
 		{
@@ -214,8 +223,6 @@ namespace Terminal.Gui.Views {
 			Application.Shutdown ();
 		}
 
-
-
 		[Fact]
 		public void SwitchTabBy_OutOfTabsRange ()
 		{
@@ -232,7 +239,103 @@ namespace Terminal.Gui.Views {
 
 			// Shutdown must be called to safely clean up Application if Init has been called
 			Application.Shutdown ();
+		}
 
+		[Fact, AutoInitShutdown]
+		public void TestThinTabView_WithLongNames ()
+		{
+			var tv = GetTabView (out var tab1, out var tab2, false);
+			tv.Width = 10;
+			tv.Height = 5;
+
+			// Ensures that the tab bar subview gets the bounds of the parent TabView
+			tv.LayoutSubviews ();
+
+			// Test two tab names that fit 
+			tab1.Text = "12";
+			tab2.Text = "13";
+
+			tv.Redraw (tv.Bounds);
+
+			GraphViewTests.AssertDriverContentsAre (@"
+┌──┐
+│12│13
+│  └─────┐
+│hi      │
+└────────┘", output);
+
+
+			// Test first tab name too long
+			tab1.Text = "12345678910";
+			tab2.Text = "13";
+
+			tv.Redraw (tv.Bounds);
+
+			GraphViewTests.AssertDriverContentsAre (@"
+┌───────┐
+│1234567│
+│       └►
+│hi      │
+└────────┘", output);
+
+			//switch to tab2
+			tv.SelectedTab = tab2;
+			tv.Redraw (tv.Bounds);
+
+			GraphViewTests.AssertDriverContentsAre (@"   
+┌──┐
+│13│
+◄  └─────┐
+│hi2     │
+└────────┘", output);
+
+
+			// now make both tabs too long
+			tab1.Text = "12345678910";
+			tab2.Text = "abcdefghijklmnopq";
+
+			tv.Redraw (tv.Bounds);
+
+			GraphViewTests.AssertDriverContentsAre (@"     
+┌───────┐
+│abcdefg│
+◄       └┐
+│hi2     │
+└────────┘", output);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void TestTabView_Width4 ()
+		{
+			var tv = GetTabView (out _, out _, false);
+			tv.Width = 4;
+			tv.Height = 5;
+			tv.LayoutSubviews ();
+
+			tv.Redraw (tv.Bounds);
+
+			GraphViewTests.AssertDriverContentsAre (@"
+┌─┐
+│T│
+│ └►
+│hi│
+└──┘", output);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void TestTabView_Width3 ()
+		{
+			var tv = GetTabView (out _, out _, false);
+			tv.Width = 3;
+			tv.Height = 5;
+			tv.LayoutSubviews ();
+
+			tv.Redraw (tv.Bounds);
+
+			GraphViewTests.AssertDriverContentsAre (@"
+┌─┐
+│h│
+└─┘", output);
 		}
 
 		private void InitFakeDriver ()

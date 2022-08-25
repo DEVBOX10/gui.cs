@@ -10,19 +10,20 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class TreeNode
    ">
-    <meta name="generator" content="docfx 2.59.0.0">
+    <meta name="generator" content="docfx 2.59.3.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
     <link rel="stylesheet" href="../../styles/docfx.css">
     <link rel="stylesheet" href="../../styles/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Source Sans Pro" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css?family=Source Code Pro" rel="stylesheet"> 
     <meta property="docfx:navrel" content="../../toc.html">
     <meta property="docfx:tocrel" content="toc.html">
     
     <meta property="docfx:rel" content="../../">
     
-  </head>
-  <body data-spy="scroll" data-target="#affix" data-offset="120">
+  </head>  <body data-spy="scroll" data-target="#affix" data-offset="120">
     <div id="wrapper">
       <header>
         
@@ -92,39 +93,20 @@ Simple class for representing nodes, use with regular (non generic) <a class="xr
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">TreeNode</span></div>
   </div>
-  <div classs="implements">
+  <div class="implements">
     <h5>Implements</h5>
     <div><a class="xref" href="Terminal.Gui.Trees.ITreeNode.html">ITreeNode</a></div>
-  </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Terminal.Gui.Trees.html">Terminal.Gui.Trees</a></h6>
   <h6><strong>Assembly</strong>: Terminal.Gui.dll</h6>
   <h5 id="Terminal_Gui_Trees_TreeNode_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class TreeNode : ITreeNode</code></pre>
+    <pre><code class="lang-csharp hljs">public class TreeNode : Object, ITreeNode</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
+  
+  
   <a id="Terminal_Gui_Trees_TreeNode__ctor_" data-uid="Terminal.Gui.Trees.TreeNode.#ctor*"></a>
   <h4 id="Terminal_Gui_Trees_TreeNode__ctor" data-uid="Terminal.Gui.Trees.TreeNode.#ctor">TreeNode()</h4>
   <div class="markdown level1 summary">
@@ -135,6 +117,8 @@ Initialises a new instance with no <a class="xref" href="Terminal.Gui.Trees.Tree
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public TreeNode()</code></pre>
   </div>
+  
+  
   <a id="Terminal_Gui_Trees_TreeNode__ctor_" data-uid="Terminal.Gui.Trees.TreeNode.#ctor*"></a>
   <h4 id="Terminal_Gui_Trees_TreeNode__ctor_System_String_" data-uid="Terminal.Gui.Trees.TreeNode.#ctor(System.String)">TreeNode(String)</h4>
   <div class="markdown level1 summary">
@@ -164,6 +148,8 @@ Initialises a new instance and sets starting <a class="xref" href="Terminal.Gui.
   </table>
   <h3 id="properties">Properties
   </h3>
+  
+  
   <a id="Terminal_Gui_Trees_TreeNode_Children_" data-uid="Terminal.Gui.Trees.TreeNode.Children*"></a>
   <h4 id="Terminal_Gui_Trees_TreeNode_Children" data-uid="Terminal.Gui.Trees.TreeNode.Children">Children</h4>
   <div class="markdown level1 summary">
@@ -189,6 +175,8 @@ Children of the current node
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_Trees_TreeNode_Tag_" data-uid="Terminal.Gui.Trees.TreeNode.Tag*"></a>
   <h4 id="Terminal_Gui_Trees_TreeNode_Tag" data-uid="Terminal.Gui.Trees.TreeNode.Tag">Tag</h4>
   <div class="markdown level1 summary">
@@ -214,6 +202,8 @@ Optionally allows you to store some custom data/class here.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_Trees_TreeNode_Text_" data-uid="Terminal.Gui.Trees.TreeNode.Text*"></a>
   <h4 id="Terminal_Gui_Trees_TreeNode_Text" data-uid="Terminal.Gui.Trees.TreeNode.Text">Text</h4>
   <div class="markdown level1 summary">
@@ -241,6 +231,8 @@ Text to display in tree node for current entry
   </table>
   <h3 id="methods">Methods
   </h3>
+  
+  
   <a id="Terminal_Gui_Trees_TreeNode_ToString_" data-uid="Terminal.Gui.Trees.TreeNode.ToString*"></a>
   <h4 id="Terminal_Gui_Trees_TreeNode_ToString" data-uid="Terminal.Gui.Trees.TreeNode.ToString">ToString()</h4>
   <div class="markdown level1 summary">
@@ -266,8 +258,6 @@ returns <a class="xref" href="Terminal.Gui.Trees.TreeNode.html#Terminal_Gui_Tree
       </tr>
     </tbody>
   </table>
-  <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">System.Object.ToString()</span></div>
   <h3 id="implements">Implements</h3>
   <div>
       <a class="xref" href="Terminal.Gui.Trees.ITreeNode.html">ITreeNode</a>
@@ -277,6 +267,10 @@ returns <a class="xref" href="Terminal.Gui.Trees.TreeNode.html#Terminal_Gui_Tree
           
           <div class="hidden-sm col-md-2" role="complementary">
             <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
               <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
                 <h5>In This Article</h5>
                 <div></div>

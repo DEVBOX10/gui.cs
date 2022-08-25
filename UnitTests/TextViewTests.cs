@@ -1323,20 +1323,26 @@ namespace Terminal.Gui.Views {
 			Assert.Equal ("TAB to jump between text fields.", _textView.Text);
 			_textView.SelectionStartColumn = 0;
 			_textView.SelectionStartRow = 0;
+			Assert.Equal (new Point (24, 0), _textView.CursorPosition);
 			Assert.True (_textView.Selecting);
 			_textView.Selecting = false;
 			_textView.ProcessKey (new KeyEvent (Key.Y | Key.CtrlMask, new KeyModifiers ())); // Paste
+			Assert.Equal (new Point (28, 0), _textView.CursorPosition);
+			Assert.False (_textView.Selecting);
 			Assert.Equal ("TAB to jump between texttext fields.", _textView.Text);
 			_textView.SelectionStartColumn = 24;
 			_textView.SelectionStartRow = 0;
 			_textView.ProcessKey (new KeyEvent (Key.W | Key.CtrlMask, new KeyModifiers ())); // Cut
+			Assert.Equal (new Point (24, 0), _textView.CursorPosition);
+			Assert.False (_textView.Selecting);
 			Assert.Equal ("", _textView.SelectedText);
 			Assert.Equal ("TAB to jump between text fields.", _textView.Text);
 			_textView.SelectionStartColumn = 0;
 			_textView.SelectionStartRow = 0;
-			Assert.True (_textView.Selecting);
 			_textView.Selecting = false;
 			_textView.ProcessKey (new KeyEvent (Key.Y | Key.CtrlMask, new KeyModifiers ())); // Paste
+			Assert.Equal (new Point (28, 0), _textView.CursorPosition);
+			Assert.False (_textView.Selecting);
 			Assert.Equal ("TAB to jump between texttext fields.", _textView.Text);
 		}
 
@@ -1850,22 +1856,28 @@ namespace Terminal.Gui.Views {
 		[Fact]
 		public void LoadFile_Throws_If_File_Is_Null ()
 		{
+			var result = false;
 			var tv = new TextView ();
-			Assert.Throws<ArgumentNullException> (() => tv.LoadFile (null));
+			Assert.Throws<ArgumentNullException> (() => result = tv.LoadFile (null));
+			Assert.False (result);
 		}
 
 		[Fact]
 		public void LoadFile_Throws_If_File_Is_Empty ()
 		{
+			var result = false;
 			var tv = new TextView ();
-			Assert.Throws<ArgumentException> (() => tv.LoadFile (""));
+			Assert.Throws<ArgumentException> (() => result = tv.LoadFile (""));
+			Assert.False (result);
 		}
 
 		[Fact]
 		public void LoadFile_Throws_If_File_Not_Exist ()
 		{
+			var result = false;
 			var tv = new TextView ();
-			Assert.Throws<System.IO.FileNotFoundException> (() => tv.LoadFile ("blabla"));
+			Assert.Throws<System.IO.FileNotFoundException> (() => result = tv.LoadFile ("blabla"));
+			Assert.False (result);
 		}
 
 		[Fact]
@@ -1961,18 +1973,118 @@ namespace Terminal.Gui.Views {
 
 			tv.Redraw (tv.Bounds);
 
-			string expected = @"
-This is 
-the 
-first 
-line.
-This is 
-the 
+			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+This is
+the    
+first  
+line.  
+This is
+the    
 second 
-line.
-";
+line.  
+", output);
+		}
 
-			GraphViewTests.AssertDriverContentsAre (expected, output);
+		[Fact]
+		[AutoInitShutdown]
+		public void WordWrap_Deleting_Backwards ()
+		{
+			var tv = new TextView () {
+				Width = 5,
+				Height = 2,
+				WordWrap = true,
+				Text = "aaaa"
+			};
+			Application.Top.Add (tv);
+			Application.Begin (Application.Top);
+
+			Assert.Equal (new Point (0, 0), tv.CursorPosition);
+			Assert.Equal (0, tv.LeftColumn);
+			GraphViewTests.AssertDriverContentsAre (@"
+aaaa
+", output);
+
+			tv.CursorPosition = new Point (5, 0);
+			Assert.True (tv.ProcessKey (new KeyEvent (Key.Backspace, new KeyModifiers ())));
+			Application.Refresh ();
+			Assert.Equal (0, tv.LeftColumn);
+			GraphViewTests.AssertDriverContentsAre (@"
+aaa
+", output);
+
+			Assert.True (tv.ProcessKey (new KeyEvent (Key.Backspace, new KeyModifiers ())));
+			Application.Refresh ();
+			Assert.Equal (0, tv.LeftColumn);
+			GraphViewTests.AssertDriverContentsAre (@"
+aa
+", output);
+
+			Assert.True (tv.ProcessKey (new KeyEvent (Key.Backspace, new KeyModifiers ())));
+			Application.Refresh ();
+			Assert.Equal (0, tv.LeftColumn);
+			GraphViewTests.AssertDriverContentsAre (@"
+a
+", output);
+
+			Assert.True (tv.ProcessKey (new KeyEvent (Key.Backspace, new KeyModifiers ())));
+			Application.Refresh ();
+			Assert.Equal (0, tv.LeftColumn);
+			GraphViewTests.AssertDriverContentsAre (@"
+
+", output);
+
+			Assert.True (tv.ProcessKey (new KeyEvent (Key.Backspace, new KeyModifiers ())));
+			Application.Refresh ();
+			Assert.Equal (0, tv.LeftColumn);
+			GraphViewTests.AssertDriverContentsAre (@"
+
+", output);
+		}
+
+		[Fact]
+		[InitShutdown]
+		public void WordWrap_ReadOnly_CursorPosition_SelectedText_Copy ()
+		{
+			//          0123456789
+			var text = "This is the first line.\nThis is the second line.\n";
+			var tv = new TextView () { Width = 11, Height = 9 };
+			tv.Text = text;
+			Assert.Equal ($"This is the first line.{Environment.NewLine}This is the second line.{Environment.NewLine}", tv.Text);
+			tv.WordWrap = true;
+
+			Application.Top.Add (tv);
+
+			tv.Redraw (tv.Bounds);
+			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+This is  
+the first
+line.    
+This is  
+the      
+second   
+line.    
+", output);
+
+			tv.ReadOnly = true;
+			tv.CursorPosition = new Point (6, 2);
+			Assert.Equal (new Point (5, 2), tv.CursorPosition);
+			tv.Redraw (tv.Bounds);
+			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+This is  
+the first
+line.    
+This is  
+the      
+second   
+line.    
+", output);
+
+			tv.SelectionStartRow = 0;
+			tv.SelectionStartColumn = 0;
+			Assert.Equal ("This is the first line.", tv.SelectedText);
+
+			tv.Copy ();
+			Assert.Equal ("This is the first line.", Clipboard.Contents);
 		}
 
 		[Fact]
@@ -5561,14 +5673,12 @@ line.
 			Assert.Equal (3, tv.Lines);
 			Assert.Equal (new Point (1, 1), tv.CursorPosition);
 
-			// Undo is disabled
 			Assert.True (tv.ProcessKey (new KeyEvent (Key.Z | Key.CtrlMask, new KeyModifiers ())));
-			Assert.Equal ($"This is the {Environment.NewLine}athird line.{Environment.NewLine}", tv.Text);
+			Assert.Equal ($"This is the {Environment.NewLine}third line.{Environment.NewLine}", tv.Text);
 			Assert.Equal (3, tv.Lines);
-			Assert.Equal (new Point (1, 1), tv.CursorPosition);
+			Assert.Equal (new Point (0, 1), tv.CursorPosition);
 			Assert.True (tv.IsDirty);
 
-			// Redo is disabled
 			Assert.True (tv.ProcessKey (new KeyEvent (Key.R | Key.CtrlMask, new KeyModifiers ())));
 			Assert.Equal ($"This is the {Environment.NewLine}athird line.{Environment.NewLine}", tv.Text);
 			Assert.Equal (3, tv.Lines);
@@ -5692,6 +5802,247 @@ line.
 			tv.SelectAll ();
 			Assert.Equal ($"1{Environment.NewLine}2", tv.Text);
 			Assert.Equal ($"1{Environment.NewLine}2", tv.SelectedText);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void WordWrap_Not_Throw_If_Width_Is_Less_Than_Zero ()
+		{
+			var exception = Record.Exception (() => {
+				var tv = new TextView () {
+					Width = Dim.Fill (),
+					Height = Dim.Fill (),
+					WordWrap = true,
+					Text = "これは、左右のクリップ境界をテストするための非常に長いテキストです。"
+				};
+			});
+			Assert.Null (exception);
+		}
+
+		[Fact]
+		[AutoInitShutdown]
+		public void ScrollDownTillCaretOffscreen_ThenType ()
+		{
+			var tv = new TextView {
+				Width = 10,
+				Height = 5
+			};
+
+			// add 100 lines of wide text to view
+			for (int i = 0; i < 100; i++)
+				tv.Text += new string ('x', 100) + Environment.NewLine;
+
+			Assert.Equal (0, tv.CursorPosition.Y);
+			tv.ScrollTo (50);
+			Assert.Equal (0, tv.CursorPosition.Y);
+
+			tv.ProcessKey (new KeyEvent (Key.p, new KeyModifiers ()));
+		}
+
+		[Fact]
+		[AutoInitShutdown]
+		public void MoveDown_By_Setting_CursorPosition ()
+		{
+			var tv = new TextView {
+				Width = 10,
+				Height = 5
+			};
+
+			// add 100 lines of wide text to view
+			for (int i = 0; i < 100; i++)
+				tv.Text += new string ('x', 100) + (i == 99 ? "" : Environment.NewLine);
+
+			Assert.Equal (new Point (0, 0), tv.CursorPosition);
+			tv.CursorPosition = new Point (5, 50);
+			Assert.Equal (new Point (5, 50), tv.CursorPosition);
+
+			tv.CursorPosition = new Point (200, 200);
+			Assert.Equal (new Point (100, 99), tv.CursorPosition);
+		}
+
+		[Fact]
+		[AutoInitShutdown]
+		public void ScrollTo_CursorPosition ()
+		{
+			var tv = new TextView {
+				Width = 10,
+				Height = 5
+			};
+
+			// add 100 lines of wide text to view
+			for (int i = 0; i < 100; i++)
+				tv.Text += new string ('x', 100) + (i == 99 ? "" : Environment.NewLine);
+
+			Assert.Equal (new Point (0, 0), tv.CursorPosition);
+			tv.ScrollTo (50);
+			Assert.Equal (new Point (0, 0), tv.CursorPosition);
+
+			tv.CursorPosition = new Point (tv.LeftColumn, tv.TopRow);
+			Assert.Equal (new Point (0, 50), tv.CursorPosition);
+		}
+
+		[Fact]
+		[InitShutdown]
+		public void Mouse_Button_Shift_Preserves_Selection ()
+		{
+			Assert.Equal ("TAB to jump between text fields.", _textView.Text);
+			Assert.True (_textView.MouseEvent (new MouseEvent () { X = 12, Y = 0, Flags = MouseFlags.Button1Pressed | MouseFlags.ButtonShift }));
+			Assert.Equal (0, _textView.SelectionStartColumn);
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (new Point (12, 0), _textView.CursorPosition);
+			Assert.True (_textView.Selecting);
+			Assert.Equal ("TAB to jump ", _textView.SelectedText);
+
+			Assert.True (_textView.MouseEvent (new MouseEvent () { X = 12, Y = 0, Flags = MouseFlags.Button1Clicked }));
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (new Point (12, 0), _textView.CursorPosition);
+			Assert.True (_textView.Selecting);
+			Assert.Equal ("TAB to jump ", _textView.SelectedText);
+
+			Assert.True (_textView.MouseEvent (new MouseEvent () { X = 19, Y = 0, Flags = MouseFlags.Button1Pressed | MouseFlags.ButtonShift }));
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (new Point (19, 0), _textView.CursorPosition);
+			Assert.True (_textView.Selecting);
+			Assert.Equal ("TAB to jump between", _textView.SelectedText);
+
+			Assert.True (_textView.MouseEvent (new MouseEvent () { X = 19, Y = 0, Flags = MouseFlags.Button1Clicked }));
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (new Point (19, 0), _textView.CursorPosition);
+			Assert.True (_textView.Selecting);
+			Assert.Equal ("TAB to jump between", _textView.SelectedText);
+
+			Assert.True (_textView.MouseEvent (new MouseEvent () { X = 24, Y = 0, Flags = MouseFlags.Button1Pressed | MouseFlags.ButtonShift }));
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (new Point (24, 0), _textView.CursorPosition);
+			Assert.True (_textView.Selecting);
+			Assert.Equal ("TAB to jump between text", _textView.SelectedText);
+
+			Assert.True (_textView.MouseEvent (new MouseEvent () { X = 24, Y = 0, Flags = MouseFlags.Button1Clicked }));
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (new Point (24, 0), _textView.CursorPosition);
+			Assert.True (_textView.Selecting);
+			Assert.Equal ("TAB to jump between text", _textView.SelectedText);
+
+			Assert.True (_textView.MouseEvent (new MouseEvent () { X = 24, Y = 0, Flags = MouseFlags.Button1Pressed }));
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (0, _textView.SelectionStartRow);
+			Assert.Equal (new Point (24, 0), _textView.CursorPosition);
+			Assert.True (_textView.Selecting);
+			Assert.Equal ("", _textView.SelectedText);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void UnwrappedCursorPosition_Event ()
+		{
+			var cp = Point.Empty;
+			var tv = new TextView () {
+				Width = Dim.Fill (),
+				Height = Dim.Fill (),
+				Text = "This is the first line.\nThis is the second line.\n"
+			};
+			tv.UnwrappedCursorPosition += (e) => {
+				cp = e;
+			};
+			Application.Top.Add (tv);
+			Application.Begin (Application.Top);
+
+			Assert.False (tv.WordWrap);
+			Assert.Equal (Point.Empty, tv.CursorPosition);
+			Assert.Equal (Point.Empty, cp);
+			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+This is the first line. 
+This is the second line.
+", output);
+
+			tv.WordWrap = true;
+			tv.CursorPosition = new Point (12, 0);
+			tv.Redraw (tv.Bounds);
+			Assert.Equal (new Point (12, 0), tv.CursorPosition);
+			Assert.Equal (new Point (12, 0), cp);
+			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+This is the first line. 
+This is the second line.
+", output);
+
+			((FakeDriver)Application.Driver).SetBufferSize (6, 25);
+			tv.Redraw (tv.Bounds);
+			Assert.Equal (new Point (4, 2), tv.CursorPosition);
+			Assert.Equal (new Point (12, 0), cp);
+			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+This 
+is   
+the  
+first
+     
+line.
+This 
+is   
+the  
+secon
+d    
+line.
+", output);
+
+			Assert.True (tv.ProcessKey (new KeyEvent (Key.CursorRight, new KeyModifiers ())));
+			tv.Redraw (tv.Bounds);
+			Assert.Equal (new Point (0, 3), tv.CursorPosition);
+			Assert.Equal (new Point (12, 0), cp);
+			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+This 
+is   
+the  
+first
+     
+line.
+This 
+is   
+the  
+secon
+d    
+line.
+", output);
+
+			Assert.True (tv.ProcessKey (new KeyEvent (Key.CursorRight, new KeyModifiers ())));
+			tv.Redraw (tv.Bounds);
+			Assert.Equal (new Point (1, 3), tv.CursorPosition);
+			Assert.Equal (new Point (13, 0), cp);
+			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+This 
+is   
+the  
+first
+     
+line.
+This 
+is   
+the  
+secon
+d    
+line.
+", output);
+
+			Assert.True (tv.MouseEvent (new MouseEvent () { X = 0, Y = 3, Flags = MouseFlags.Button1Pressed }));
+			tv.Redraw (tv.Bounds);
+			Assert.Equal (new Point (0, 3), tv.CursorPosition);
+			Assert.Equal (new Point (12, 0), cp);
+			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+This 
+is   
+the  
+first
+     
+line.
+This 
+is   
+the  
+secon
+d    
+line.
+", output);
 		}
 	}
 }

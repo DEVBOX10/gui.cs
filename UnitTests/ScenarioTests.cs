@@ -26,21 +26,25 @@ namespace Terminal.Gui {
 		int CreateInput (string input)
 		{
 			// Put a control-q in at the end
-			Console.MockKeyPresses.Push (new ConsoleKeyInfo ('q', ConsoleKey.Q, shift: false, alt: false, control: true));
+			FakeConsole.MockKeyPresses.Push (new ConsoleKeyInfo ('q', ConsoleKey.Q, shift: false, alt: false, control: true));
 			foreach (var c in input.Reverse ()) {
 				if (char.IsLetter (c)) {
-					Console.MockKeyPresses.Push (new ConsoleKeyInfo (char.ToLower (c), (ConsoleKey)char.ToUpper (c), shift: char.IsUpper (c), alt: false, control: false));
+					FakeConsole.MockKeyPresses.Push (new ConsoleKeyInfo (char.ToLower (c), (ConsoleKey)char.ToUpper (c), shift: char.IsUpper (c), alt: false, control: false));
 				} else {
-					Console.MockKeyPresses.Push (new ConsoleKeyInfo (c, (ConsoleKey)c, shift: false, alt: false, control: false));
+					FakeConsole.MockKeyPresses.Push (new ConsoleKeyInfo (c, (ConsoleKey)c, shift: false, alt: false, control: false));
 				}
 			}
-			return Console.MockKeyPresses.Count;
+			return FakeConsole.MockKeyPresses.Count;
 		}
 
+
 		/// <summary>
+		/// <para>
 		/// This runs through all Scenarios defined in UI Catalog, calling Init, Setup, and Run.
-		/// It puts a Ctrl-Q in the input queue so the Scenario immediately exits. 
-		/// Should find any egregious regressions.
+		/// </para>
+		/// <para>
+		/// Should find any Scenarios which crash on load or do not respond to <see cref="Application.RequestStop()"/>.
+		/// </para>
 		/// </summary>
 		[Fact]
 		public void Run_All_Scenarios ()
@@ -50,57 +54,23 @@ namespace Terminal.Gui {
 
 			foreach (var scenarioClass in scenarioClasses) {
 
-				// Setup some fake keypresses 
-				// Passing empty string will cause just a ctrl-q to be fired
-				Console.MockKeyPresses.Clear ();
-				int stackSize = CreateInput ("");
+				output.WriteLine ($"Running Scenario '{scenarioClass.Name}'");
 
-				Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
-
-				int iterations = 0;
-				Application.Iteration = () => {
-					iterations++;
-					// Stop if we run out of control...
-					if (iterations > 10) {
-						Application.RequestStop ();
-					}
-				};
-
-				int ms;
-				if (scenarioClass.Name == "CharacterMap") {
-					ms = 1500;
-				}else {
-					ms = 1000;
-				}
-				var abortCount = 0;
-				Func<MainLoop, bool> abortCallback = (MainLoop loop) => {
-					abortCount++;
+				Func<MainLoop, bool> closeCallback = (MainLoop loop) => {
 					Application.RequestStop ();
 					return false;
 				};
-				var token = Application.MainLoop.AddTimeout (TimeSpan.FromMilliseconds (ms), abortCallback);
 
 				var scenario = (Scenario)Activator.CreateInstance (scenarioClass);
+				Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
+
+				// Close after a short period of time
+				var token = Application.MainLoop.AddTimeout (TimeSpan.FromMilliseconds (200), closeCallback);
+
 				scenario.Init (Application.Top, Colors.Base);
 				scenario.Setup ();
-				// There is no need to call Application.Begin because Init already creates the Application.Top
-				// If Application.RunState is used then the Application.RunLoop must also be used instead Application.Run.
-				//var rs = Application.Begin (Application.Top);
 				scenario.Run ();
-
-				//Application.End (rs);
-
-				// Shutdown must be called to safely clean up Application if Init has been called
 				Application.Shutdown ();
-				
-				if(abortCount != 0) {
-					output.WriteLine ($"Scenario {scenarioClass} had abort count of {abortCount}");
-				}
-
-				Assert.Equal (0, abortCount);
-				// # of key up events should match # of iterations
-				Assert.Equal (1, iterations);
-				Assert.Equal (stackSize, iterations);
 			}
 #if DEBUG_IDISPOSABLE
 			foreach (var inst in Responder.Instances) {

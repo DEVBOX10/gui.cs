@@ -106,6 +106,11 @@ namespace Terminal.Gui {
 		public static Toplevel Current { get; private set; }
 
 		/// <summary>
+		/// The current <see cref="View"/> object that wants continuous mouse button pressed events.
+		/// </summary>
+		public static View WantContinuousButtonPressedView { get; private set; }
+
+		/// <summary>
 		/// The current <see cref="ConsoleDriver.HeightAsBuffer"/> used in the terminal.
 		/// </summary>
 		public static bool HeightAsBuffer {
@@ -120,24 +125,6 @@ namespace Terminal.Gui {
 					throw new ArgumentNullException ("The driver must be initialized first.");
 				}
 				Driver.HeightAsBuffer = value;
-			}
-		}
-
-		/// <summary>
-		/// Used only by <see cref="NetDriver"/> to forcing always moving the cursor position when writing to the screen.
-		/// </summary>
-		public static bool AlwaysSetPosition {
-			get {
-				if (Driver is NetDriver) {
-					return (Driver as NetDriver).AlwaysSetPosition;
-				}
-				return false;
-			}
-			set {
-				if (Driver is NetDriver) {
-					(Driver as NetDriver).AlwaysSetPosition = value;
-					Driver.Refresh ();
-				}
 			}
 		}
 
@@ -229,6 +216,24 @@ namespace Terminal.Gui {
 		public static bool IsMouseDisabled { get; set; }
 
 		/// <summary>
+		/// Set to true to cause the RunLoop method to exit after the first iterations.
+		/// Set to false (the default) to cause the RunLoop to continue running until Application.RequestStop() is called.
+		/// </summary>
+		public static bool ExitRunLoopAfterFirstIteration { get; set; } = false;
+
+		/// <summary>
+		/// Notify that a new <see cref="RunState"/> token was created,
+		/// used if <see cref="ExitRunLoopAfterFirstIteration"/> is true.
+		/// </summary>
+		public static event Action<RunState> NotifyNewRunState;
+
+		/// <summary>
+		/// Notify that a existent <see cref="RunState"/> token is stopping,
+		/// used if <see cref="ExitRunLoopAfterFirstIteration"/> is true.
+		/// </summary>
+		public static event Action<Toplevel> NotifyStopRunState;
+
+		/// <summary>
 		///   This event is raised on each iteration of the <see cref="MainLoop"/> 
 		/// </summary>
 		/// <remarks>
@@ -274,9 +279,18 @@ namespace Terminal.Gui {
 
 			public override void Send (SendOrPostCallback d, object state)
 			{
-				mainLoop.Invoke (() => {
+				if (Thread.CurrentThread.ManagedThreadId == _mainThreadId) {
 					d (state);
-				});
+				} else {
+					var wasExecuted = false;
+					mainLoop.Invoke (() => {
+						d (state);
+						wasExecuted = true;
+					});
+					while (!wasExecuted) {
+						Thread.Sleep (15);
+					}
+				}
 			}
 		}
 
@@ -302,6 +316,7 @@ namespace Terminal.Gui {
 		public static void Init (ConsoleDriver driver = null, IMainLoopDriver mainLoopDriver = null) => Init (() => Toplevel.Create (), driver, mainLoopDriver);
 
 		internal static bool _initialized = false;
+		internal static int _mainThreadId = -1;
 
 		/// <summary>
 		/// Initializes the Terminal.Gui application
@@ -355,6 +370,7 @@ namespace Terminal.Gui {
 			Top = topLevelFactory ();
 			Current = Top;
 			supportedCultures = GetSupportedCultures ();
+			_mainThreadId = Thread.CurrentThread.ManagedThreadId;
 			_initialized = true;
 		}
 
@@ -370,7 +386,10 @@ namespace Terminal.Gui {
 			{
 				Toplevel = view;
 			}
-			internal Toplevel Toplevel;
+			/// <summary>
+			/// The <see cref="Toplevel"/> belong to this <see cref="RunState"/>.
+			/// </summary>
+			public Toplevel Toplevel { get; internal set; }
 
 			/// <summary>
 			/// Releases alTop = l resource used by the <see cref="Application.RunState"/> object.
@@ -403,7 +422,7 @@ namespace Terminal.Gui {
 
 		static void ProcessKeyEvent (KeyEvent ke)
 		{
-			if(RootKeyEvent?.Invoke(ke) ?? false) {
+			if (RootKeyEvent?.Invoke (ke) ?? false) {
 				return;
 			}
 
@@ -598,9 +617,8 @@ namespace Terminal.Gui {
 		/// </para>
 		/// <para>Return true to suppress the KeyPress event</para>
 		/// </summary>
-		public static Func<KeyEvent,bool> RootKeyEvent;
+		public static Func<KeyEvent, bool> RootKeyEvent;
 
-		internal static View wantContinuousButtonPressedView;
 		static View lastMouseOwnerView;
 
 		static void ProcessMouseEvent (MouseEvent me)
@@ -612,9 +630,9 @@ namespace Terminal.Gui {
 			var view = FindDeepestView (Current, me.X, me.Y, out int rx, out int ry);
 
 			if (view != null && view.WantContinuousButtonPressed)
-				wantContinuousButtonPressedView = view;
+				WantContinuousButtonPressedView = view;
 			else
-				wantContinuousButtonPressedView = null;
+				WantContinuousButtonPressedView = null;
 			if (view != null) {
 				me.View = view;
 			}
@@ -673,9 +691,9 @@ namespace Terminal.Gui {
 					return;
 
 				if (view.WantContinuousButtonPressed)
-					wantContinuousButtonPressedView = view;
+					WantContinuousButtonPressedView = view;
 				else
-					wantContinuousButtonPressedView = null;
+					WantContinuousButtonPressedView = null;
 
 				// Should we bubbled up the event, if it is not handled?
 				view.OnMouseEvent (nme);
@@ -886,13 +904,16 @@ namespace Terminal.Gui {
 			RootMouseEvent = null;
 			RootKeyEvent = null;
 			Resized = null;
+			_mainThreadId = -1;
+			NotifyNewRunState = null;
+			NotifyStopRunState = null;
 			_initialized = false;
 			mouseGrabView = null;
 
 			// Reset synchronization context to allow the user to run async/await,
 			// as the main loop has been ended, the synchronization context from 
 			// gui.cs does no longer process any callbacks. See #1084 for more details:
-			// (https://github.com/migueldeicaza/gui.cs/issues/1084).
+			// (https://github.com/gui-cs/Terminal.Gui/issues/1084).
 			SynchronizationContext.SetSynchronizationContext (syncContext: null);
 		}
 
@@ -914,7 +935,7 @@ namespace Terminal.Gui {
 		/// </summary>
 		public static void Refresh ()
 		{
-			Driver.UpdateScreen ();
+			Driver.UpdateOffScreen ();
 			View last = null;
 			foreach (var v in toplevels.Reverse ()) {
 				if (v.Visible) {
@@ -970,51 +991,71 @@ namespace Terminal.Gui {
 
 			bool firstIteration = true;
 			for (state.Toplevel.Running = true; state.Toplevel.Running;) {
-				if (MainLoop.EventsPending (wait)) {
-					// Notify Toplevel it's ready
-					if (firstIteration) {
-						state.Toplevel.OnReady ();
-					}
-					firstIteration = false;
-
-					MainLoop.MainIteration ();
-					Iteration?.Invoke ();
-
-					EnsureModalOrVisibleAlwaysOnTop (state.Toplevel);
-					if ((state.Toplevel != Current && Current?.Modal == true)
-						|| (state.Toplevel != Current && Current?.Modal == false)) {
-						MdiTop?.OnDeactivate (state.Toplevel);
-						state.Toplevel = Current;
-						MdiTop?.OnActivate (state.Toplevel);
-						Top.SetChildNeedsDisplay ();
-						Refresh ();
-					}
-					if (Driver.EnsureCursorVisibility ()) {
-						state.Toplevel.SetNeedsDisplay ();
-					}
-				} else if (!wait) {
+				if (ExitRunLoopAfterFirstIteration && !firstIteration)
 					return;
+				RunMainLoopIteration (ref state, wait, ref firstIteration);
+			}
+		}
+
+		/// <summary>
+		/// Run one iteration of the MainLoop.
+		/// </summary>
+		/// <param name="state">The state returned by the Begin method.</param>
+		/// <param name="wait">If will execute the runloop waiting for events.</param>
+		/// <param name="firstIteration">If it's the first run loop iteration.</param>
+		public static void RunMainLoopIteration (ref RunState state, bool wait, ref bool firstIteration)
+		{
+			if (MainLoop.EventsPending (wait)) {
+				// Notify Toplevel it's ready
+				if (firstIteration) {
+					state.Toplevel.OnReady ();
 				}
-				if (state.Toplevel != Top
-					&& (!Top.NeedDisplay.IsEmpty || Top.ChildNeedsDisplay || Top.LayoutNeeded)) {
-					Top.Redraw (Top.Bounds);
-					state.Toplevel.SetNeedsDisplay (state.Toplevel.Bounds);
+
+				MainLoop.MainIteration ();
+				Iteration?.Invoke ();
+
+				EnsureModalOrVisibleAlwaysOnTop (state.Toplevel);
+				if ((state.Toplevel != Current && Current?.Modal == true)
+					|| (state.Toplevel != Current && Current?.Modal == false)) {
+					MdiTop?.OnDeactivate (state.Toplevel);
+					state.Toplevel = Current;
+					MdiTop?.OnActivate (state.Toplevel);
+					Top.SetChildNeedsDisplay ();
+					Refresh ();
 				}
-				if (!state.Toplevel.NeedDisplay.IsEmpty || state.Toplevel.ChildNeedsDisplay || state.Toplevel.LayoutNeeded
-					|| MdiChildNeedsDisplay ()) {
-					state.Toplevel.Redraw (state.Toplevel.Bounds);
-					if (DebugDrawBounds) {
-						DrawBounds (state.Toplevel);
+				if (Driver.EnsureCursorVisibility ()) {
+					state.Toplevel.SetNeedsDisplay ();
+				}
+			} else if (!wait) {
+				return;
+			}
+			firstIteration = false;
+
+			if (state.Toplevel != Top
+				&& (!Top.NeedDisplay.IsEmpty || Top.ChildNeedsDisplay || Top.LayoutNeeded)) {
+				Top.Redraw (Top.Bounds);
+				foreach (var top in toplevels.Reverse ()) {
+					if (top != Top && top != state.Toplevel) {
+						top.SetNeedsDisplay ();
+						top.Redraw (top.Bounds);
 					}
-					state.Toplevel.PositionCursor ();
-					Driver.Refresh ();
-				} else {
-					Driver.UpdateCursor ();
 				}
-				if (state.Toplevel != Top && !state.Toplevel.Modal
-					&& (!Top.NeedDisplay.IsEmpty || Top.ChildNeedsDisplay || Top.LayoutNeeded)) {
-					Top.Redraw (Top.Bounds);
+				state.Toplevel.SetNeedsDisplay (state.Toplevel.Bounds);
+			}
+			if (!state.Toplevel.NeedDisplay.IsEmpty || state.Toplevel.ChildNeedsDisplay || state.Toplevel.LayoutNeeded
+				|| MdiChildNeedsDisplay ()) {
+				state.Toplevel.Redraw (state.Toplevel.Bounds);
+				if (DebugDrawBounds) {
+					DrawBounds (state.Toplevel);
 				}
+				state.Toplevel.PositionCursor ();
+				Driver.Refresh ();
+			} else {
+				Driver.UpdateCursor ();
+			}
+			if (state.Toplevel != Top && !state.Toplevel.Modal
+				&& (!Top.NeedDisplay.IsEmpty || Top.ChildNeedsDisplay || Top.LayoutNeeded)) {
+				Top.Redraw (Top.Bounds);
 			}
 		}
 
@@ -1076,8 +1117,12 @@ namespace Terminal.Gui {
 		{
 			if (_initialized && Driver != null) {
 				var top = new T ();
-				if (top.GetType ().BaseType != typeof (Toplevel)) {
-					throw new ArgumentException (top.GetType ().BaseType.Name);
+				var type = top.GetType ().BaseType;
+				while (type != typeof (Toplevel) && type != typeof (object)) {
+					type = type.BaseType;
+				}
+				if (type != typeof (Toplevel)) {
+					throw new ArgumentException ($"{top.GetType ().Name} must be derived from TopLevel");
 				}
 				Run (top, errorHandler);
 			} else {
@@ -1125,7 +1170,12 @@ namespace Terminal.Gui {
 				resume = false;
 				var runToken = Begin (view);
 				RunLoop (runToken);
-				End (runToken);
+				if (!ExitRunLoopAfterFirstIteration)
+					End (runToken);
+				else
+					// If ExitRunLoopAfterFirstIteration is true then the user must deal his disposing when it ends
+					// by using NotifyStopRunState event.
+					NotifyNewRunState?.Invoke (runToken);
 #if !DEBUG
 				}
 				catch (Exception error)
@@ -1176,7 +1226,9 @@ namespace Terminal.Gui {
 					return;
 				}
 				Current.Running = false;
+				OnNotifyStopRunState (Current);
 				top.Running = false;
+				OnNotifyStopRunState (top);
 			} else if ((MdiTop != null && top != MdiTop && top != Current && Current?.Modal == false
 				&& Current?.Running == true && !top.Running)
 				|| (MdiTop != null && top != MdiTop && top != Current && Current?.Modal == false
@@ -1187,11 +1239,13 @@ namespace Terminal.Gui {
 				&& Current?.Modal == true && top.Modal) {
 				// The Current and the top are both modal so needed to set the Current.Running to false too.
 				Current.Running = false;
+				OnNotifyStopRunState (Current);
 			} else if (MdiTop != null && Current == top && MdiTop?.Running == true && Current?.Running == true && top.Running
 				&& Current?.Modal == true && top.Modal) {
 				// The MdiTop was requested to stop inside a modal toplevel which is the Current and top,
 				// both are the same, so needed to set the Current.Running to false too.
 				Current.Running = false;
+				OnNotifyStopRunState (Current);
 			} else {
 				Toplevel currentTop;
 				if (top == Current || (Current?.Modal == true && !top.Modal)) {
@@ -1208,7 +1262,14 @@ namespace Terminal.Gui {
 					return;
 				}
 				currentTop.Running = false;
+				OnNotifyStopRunState (currentTop);
 			}
+		}
+
+		static void OnNotifyStopRunState (Toplevel top)
+		{
+			if (ExitRunLoopAfterFirstIteration)
+				NotifyStopRunState?.Invoke (top);
 		}
 
 		/// <summary>

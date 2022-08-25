@@ -14,7 +14,7 @@ namespace Terminal.Gui {
 	/// <summary>
 	/// Interface for all non generic members of <see cref="TreeView{T}"/>
 	/// 
-	/// <a href="https://migueldeicaza.github.io/gui.cs/articles/treeview.html">See TreeView Deep Dive for more information</a>.
+	/// <a href="https://gui-cs.github.io/Terminal.Gui/articles/treeview.html">See TreeView Deep Dive for more information</a>.
 	/// </summary>
 	public interface ITreeView {
 		/// <summary>
@@ -37,7 +37,7 @@ namespace Terminal.Gui {
 	/// Convenience implementation of generic <see cref="TreeView{T}"/> for any tree were all nodes
 	/// implement <see cref="ITreeNode"/>.
 	/// 
-	/// <a href="https://migueldeicaza.github.io/gui.cs/articles/treeview.html">See TreeView Deep Dive for more information</a>.
+	/// <a href="https://gui-cs.github.io/Terminal.Gui/articles/treeview.html">See TreeView Deep Dive for more information</a>.
 	/// </summary>
 	public class TreeView : TreeView<ITreeNode> {
 
@@ -56,7 +56,7 @@ namespace Terminal.Gui {
 	/// Hierarchical tree view with expandable branches.  Branch objects are dynamically determined
 	/// when expanded using a user defined <see cref="ITreeBuilder{T}"/>
 	/// 
-	/// <a href="https://migueldeicaza.github.io/gui.cs/articles/treeview.html">See TreeView Deep Dive for more information</a>.
+	/// <a href="https://gui-cs.github.io/Terminal.Gui/articles/treeview.html">See TreeView Deep Dive for more information</a>.
 	/// </summary>
 	public class TreeView<T> : View, ITreeView where T : class {
 		private int scrollOffsetVertical;
@@ -139,6 +139,13 @@ namespace Terminal.Gui {
 		/// </summary>
 		/// <value></value>
 		public MouseFlags? ObjectActivationButton { get; set; } = MouseFlags.Button1DoubleClicked;
+
+		
+		/// <summary>
+		/// Delegate for multi colored tree views.  Return the <see cref="ColorScheme"/> to use
+		/// for each passed object or null to use the default.
+		/// </summary>
+		public Func<T,ColorScheme> ColorGetter {get;set;}
 
 		/// <summary>
 		/// Secondary selected regions of tree when <see cref="MultiSelect"/> is true
@@ -603,6 +610,29 @@ namespace Terminal.Gui {
 		}
 
 		/// <summary>
+		/// <para>
+		/// Returns the Y coordinate within the <see cref="View.Bounds"/> of the
+		/// tree at which <paramref name="toFind"/> would be displayed or null if
+		/// it is not currently exposed (e.g. its parent is collapsed).
+		/// </para>
+		/// <para>
+		/// Note that the returned value can be negative if the TreeView is scrolled
+		/// down and the <paramref name="toFind"/> object is off the top of the view.
+		/// </para>
+		/// </summary>
+		/// <param name="toFind"></param>
+		/// <returns></returns>
+		public int? GetObjectRow(T toFind)
+		{
+			var idx = BuildLineMap ().IndexOf (o => o.Model.Equals (toFind));
+
+			if (idx == -1)
+				return null;
+
+			return idx - ScrollOffsetVertical;
+		}
+
+		/// <summary>
 		/// <para>Moves the <see cref="SelectedObject"/> to the next item that begins with <paramref name="character"/></para>
 		/// <para>This method will loop back to the start of the tree if reaching the end without finding a match</para>
 		/// </summary>
@@ -662,6 +692,21 @@ namespace Terminal.Gui {
 		protected virtual void OnObjectActivated (ObjectActivatedEventArgs<T> e)
 		{
 			ObjectActivated?.Invoke (e);
+		}
+
+		/// <summary>
+		/// Returns the object in the tree list that is currently visible
+		/// at the provided row.  Returns null if no object is at that location.
+		/// <remarks>
+		/// </remarks>
+		/// If you have screen coordinates then use <see cref="View.ScreenToView(int, int)"/>
+		/// to translate these into the client area of the <see cref="TreeView{T}"/>.
+		/// </summary>
+		/// <param name="row">The row of the <see cref="View.Bounds"/> of the <see cref="TreeView{T}"/></param>
+		/// <returns>The object currently displayed on this row or null</returns>
+		public T GetObjectOnRow (int row)
+		{
+			return HitTest (row)?.Model;
 		}
 
 		///<inheritdoc/>
@@ -862,7 +907,7 @@ namespace Terminal.Gui {
 		{
 			var map = BuildLineMap ();
 			ScrollOffsetVertical = Math.Max (0, map.Count - Bounds.Height + 1);
-			SelectedObject = map.Last ().Model;
+			SelectedObject = map.LastOrDefault ()?.Model;
 
 			SetNeedsDisplay ();
 		}

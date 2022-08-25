@@ -242,7 +242,7 @@ namespace Terminal.Gui {
 			const int defaultWidth = 50;
 			int textWidth = TextFormatter.MaxWidth (message, width == 0 ? defaultWidth : width);
 			int textHeight = TextFormatter.MaxLines (message, textWidth); // message.Count (ustring.Make ('\n')) + 1;
-			int msgboxHeight = Math.Max (1, textHeight) + 3; // textHeight + (top + top padding + buttons + bottom)
+			int msgboxHeight = Math.Max (1, textHeight) + 4; // textHeight + (top + top padding + buttons + bottom)
 
 			// Create button array for Dialog
 			int count = 0;
@@ -292,12 +292,12 @@ namespace Terminal.Gui {
 			d.Width = msgboxWidth;
 
 			// Setup actions
-			int clicked = -1;
+			Clicked = -1;
 			for (int n = 0; n < buttonList.Count; n++) {
 				int buttonId = n;
 				var b = buttonList [n];
 				b.Clicked += () => {
-					clicked = buttonId;
+					Clicked = buttonId;
 					Application.RequestStop ();
 				};
 				if (b.IsDefault) {
@@ -307,7 +307,13 @@ namespace Terminal.Gui {
 
 			// Run the modal; do not shutdown the mainloop driver when done
 			Application.Run (d);
-			return clicked;
+			return Clicked;
 		}
+
+		/// <summary>
+		/// The index of the selected button, or -1 if the user pressed ESC to close the dialog.
+		/// This is useful for web based console where by default there is no SynchronizationContext or TaskScheduler.
+		/// </summary>
+		public static int Clicked { get; private set; } = -1;
 	}
 }

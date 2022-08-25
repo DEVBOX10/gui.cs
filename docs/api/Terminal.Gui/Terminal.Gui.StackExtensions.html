@@ -10,19 +10,20 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class StackExtensions
    ">
-    <meta name="generator" content="docfx 2.59.0.0">
+    <meta name="generator" content="docfx 2.59.3.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
     <link rel="stylesheet" href="../../styles/docfx.css">
     <link rel="stylesheet" href="../../styles/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Source Sans Pro" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css?family=Source Code Pro" rel="stylesheet"> 
     <meta property="docfx:navrel" content="../../toc.html">
     <meta property="docfx:tocrel" content="toc.html">
     
     <meta property="docfx:rel" content="../../">
     
-  </head>
-  <body data-spy="scroll" data-target="#affix" data-offset="120">
+  </head>  <body data-spy="scroll" data-target="#affix" data-offset="120">
     <div id="wrapper">
       <header>
         
@@ -84,7 +85,7 @@
   <h1 id="Terminal_Gui_StackExtensions" data-uid="Terminal.Gui.StackExtensions" class="text-break">Class StackExtensions
   </h1>
   <div class="markdown level0 summary">
-Extension of <span class="xref">System.Collections.Generic.Stack&lt;T&gt;</span> helper to work with specific <span class="xref">System.Collections.Generic.IEqualityComparer&lt;T&gt;</span>
+Extension of <span class="xref">System.Collections.Generic.Stack&lt;&gt;</span> helper to work with specific <span class="xref">System.Collections.Generic.IEqualityComparer&lt;&gt;</span>
 </div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
@@ -92,38 +93,16 @@ Extension of <span class="xref">System.Collections.Generic.Stack&lt;T&gt;</span>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">StackExtensions</span></div>
   </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
-  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Terminal.Gui.html">Terminal.Gui</a></h6>
   <h6><strong>Assembly</strong>: Terminal.Gui.dll</h6>
   <h5 id="Terminal_Gui_StackExtensions_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static class StackExtensions</code></pre>
+    <pre><code class="lang-csharp hljs">public static class StackExtensions : Object</code></pre>
   </div>
   <h3 id="methods">Methods
   </h3>
+  
+  
   <a id="Terminal_Gui_StackExtensions_Contains_" data-uid="Terminal.Gui.StackExtensions.Contains*"></a>
   <h4 id="Terminal_Gui_StackExtensions_Contains__1_System_Collections_Generic_Stack___0____0_System_Collections_Generic_IEqualityComparer___0__" data-uid="Terminal.Gui.StackExtensions.Contains``1(System.Collections.Generic.Stack{``0},``0,System.Collections.Generic.IEqualityComparer{``0})">Contains&lt;T&gt;(Stack&lt;T&gt;, T, IEqualityComparer&lt;T&gt;)</h4>
   <div class="markdown level1 summary">
@@ -191,6 +170,8 @@ Check if the stack object contains the value to find.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_StackExtensions_FindDuplicates_" data-uid="Terminal.Gui.StackExtensions.FindDuplicates*"></a>
   <h4 id="Terminal_Gui_StackExtensions_FindDuplicates__1_System_Collections_Generic_Stack___0__System_Collections_Generic_IEqualityComparer___0__" data-uid="Terminal.Gui.StackExtensions.FindDuplicates``1(System.Collections.Generic.Stack{``0},System.Collections.Generic.IEqualityComparer{``0})">FindDuplicates&lt;T&gt;(Stack&lt;T&gt;, IEqualityComparer&lt;T&gt;)</h4>
   <div class="markdown level1 summary">
@@ -253,6 +234,8 @@ Find all duplicates stack objects values.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_StackExtensions_MoveNext_" data-uid="Terminal.Gui.StackExtensions.MoveNext*"></a>
   <h4 id="Terminal_Gui_StackExtensions_MoveNext__1_System_Collections_Generic_Stack___0__" data-uid="Terminal.Gui.StackExtensions.MoveNext``1(System.Collections.Generic.Stack{``0})">MoveNext&lt;T&gt;(Stack&lt;T&gt;)</h4>
   <div class="markdown level1 summary">
@@ -295,6 +278,8 @@ Move the first stack object value to the end.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_StackExtensions_MovePrevious_" data-uid="Terminal.Gui.StackExtensions.MovePrevious*"></a>
   <h4 id="Terminal_Gui_StackExtensions_MovePrevious__1_System_Collections_Generic_Stack___0__" data-uid="Terminal.Gui.StackExtensions.MovePrevious``1(System.Collections.Generic.Stack{``0})">MovePrevious&lt;T&gt;(Stack&lt;T&gt;)</h4>
   <div class="markdown level1 summary">
@@ -337,6 +322,8 @@ Move the last stack object value to the top.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_StackExtensions_MoveTo_" data-uid="Terminal.Gui.StackExtensions.MoveTo*"></a>
   <h4 id="Terminal_Gui_StackExtensions_MoveTo__1_System_Collections_Generic_Stack___0____0_System_Int32_System_Collections_Generic_IEqualityComparer___0__" data-uid="Terminal.Gui.StackExtensions.MoveTo``1(System.Collections.Generic.Stack{``0},``0,System.Int32,System.Collections.Generic.IEqualityComparer{``0})">MoveTo&lt;T&gt;(Stack&lt;T&gt;, T, Int32, IEqualityComparer&lt;T&gt;)</h4>
   <div class="markdown level1 summary">
@@ -394,6 +381,8 @@ Move the stack object value to the index.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_StackExtensions_Replace_" data-uid="Terminal.Gui.StackExtensions.Replace*"></a>
   <h4 id="Terminal_Gui_StackExtensions_Replace__1_System_Collections_Generic_Stack___0____0___0_System_Collections_Generic_IEqualityComparer___0__" data-uid="Terminal.Gui.StackExtensions.Replace``1(System.Collections.Generic.Stack{``0},``0,``0,System.Collections.Generic.IEqualityComparer{``0})">Replace&lt;T&gt;(Stack&lt;T&gt;, T, T, IEqualityComparer&lt;T&gt;)</h4>
   <div class="markdown level1 summary">
@@ -451,6 +440,8 @@ Replaces an stack object values that match with the value to replace.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_StackExtensions_Swap_" data-uid="Terminal.Gui.StackExtensions.Swap*"></a>
   <h4 id="Terminal_Gui_StackExtensions_Swap__1_System_Collections_Generic_Stack___0____0___0_System_Collections_Generic_IEqualityComparer___0__" data-uid="Terminal.Gui.StackExtensions.Swap``1(System.Collections.Generic.Stack{``0},``0,``0,System.Collections.Generic.IEqualityComparer{``0})">Swap&lt;T&gt;(Stack&lt;T&gt;, T, T, IEqualityComparer&lt;T&gt;)</h4>
   <div class="markdown level1 summary">
@@ -513,6 +504,10 @@ Swap two stack objects values that matches with the both values.
           
           <div class="hidden-sm col-md-2" role="complementary">
             <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
               <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
                 <h5>In This Article</h5>
                 <div></div>

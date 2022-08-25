@@ -10,19 +10,20 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class TextRegexProvider
    ">
-    <meta name="generator" content="docfx 2.59.0.0">
+    <meta name="generator" content="docfx 2.59.3.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
     <link rel="stylesheet" href="../../styles/docfx.css">
     <link rel="stylesheet" href="../../styles/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Source Sans Pro" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css?family=Source Code Pro" rel="stylesheet"> 
     <meta property="docfx:navrel" content="../../toc.html">
     <meta property="docfx:tocrel" content="toc.html">
     
     <meta property="docfx:rel" content="../../">
     
-  </head>
-  <body data-spy="scroll" data-target="#affix" data-offset="120">
+  </head>  <body data-spy="scroll" data-target="#affix" data-offset="120">
     <div id="wrapper">
       <header>
         
@@ -92,42 +93,20 @@ Regex Provider for TextValidateField.
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">TextRegexProvider</span></div>
   </div>
-  <div classs="implements">
+  <div class="implements">
     <h5>Implements</h5>
     <div><a class="xref" href="Terminal.Gui.TextValidateProviders.ITextValidateProvider.html">ITextValidateProvider</a></div>
-  </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Terminal.Gui.TextValidateProviders.html">Terminal.Gui.TextValidateProviders</a></h6>
   <h6><strong>Assembly</strong>: Terminal.Gui.dll</h6>
   <h5 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class TextRegexProvider : ITextValidateProvider</code></pre>
+    <pre><code class="lang-csharp hljs">public class TextRegexProvider : Object, ITextValidateProvider</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider__ctor_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.#ctor*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider__ctor_System_String_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.#ctor(System.String)">TextRegexProvider(String)</h4>
   <div class="markdown level1 summary">
@@ -157,9 +136,13 @@ Empty Constructor.
   </table>
   <h3 id="properties">Properties
   </h3>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_DisplayText_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.DisplayText*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_DisplayText" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.DisplayText">DisplayText</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+Gets the formatted string for display.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -180,9 +163,14 @@ Empty Constructor.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Fixed_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Fixed*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Fixed" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Fixed">Fixed</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+Set that this provider uses a fixed width.
+e.g. Masked ones are fixed.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -203,9 +191,13 @@ Empty Constructor.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_IsValid_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.IsValid*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_IsValid" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.IsValid">IsValid</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+True if the input is valid, otherwise false.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -226,6 +218,8 @@ Empty Constructor.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Pattern_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Pattern*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Pattern" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Pattern">Pattern</h4>
   <div class="markdown level1 summary">
@@ -251,9 +245,13 @@ Regex pattern property.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Text_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Text*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Text" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Text">Text</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+Set the input text and get the current value.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -274,6 +272,8 @@ Regex pattern property.
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_ValidateOnInput_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.ValidateOnInput*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_ValidateOnInput" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.ValidateOnInput">ValidateOnInput</h4>
   <div class="markdown level1 summary">
@@ -301,9 +301,13 @@ When true, validates with the regex pattern on each input, preventing the input 
   </table>
   <h3 id="methods">Methods
   </h3>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Cursor_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Cursor*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Cursor_System_Int32_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Cursor(System.Int32)">Cursor(Int32)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+Set Cursor position to <code data-dev-comment-type="paramref" class="paramref">pos</code>.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -337,13 +341,17 @@ When true, validates with the regex pattern on each input, preventing the input 
     <tbody>
       <tr>
         <td><span class="xref">System.Int32</span></td>
-        <td></td>
+        <td>Return first valid position.</td>
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_CursorEnd_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.CursorEnd*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_CursorEnd" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.CursorEnd">CursorEnd()</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+Find the last valid character position.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -360,13 +368,17 @@ When true, validates with the regex pattern on each input, preventing the input 
     <tbody>
       <tr>
         <td><span class="xref">System.Int32</span></td>
-        <td></td>
+        <td>New cursor position.</td>
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_CursorLeft_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.CursorLeft*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_CursorLeft_System_Int32_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.CursorLeft(System.Int32)">CursorLeft(Int32)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+First valid position before <code data-dev-comment-type="paramref" class="paramref">pos</code>.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -400,13 +412,17 @@ When true, validates with the regex pattern on each input, preventing the input 
     <tbody>
       <tr>
         <td><span class="xref">System.Int32</span></td>
-        <td></td>
+        <td>New cursor position if any, otherwise returns <code data-dev-comment-type="paramref" class="paramref">pos</code></td>
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_CursorRight_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.CursorRight*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_CursorRight_System_Int32_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.CursorRight(System.Int32)">CursorRight(Int32)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+First valid position after <code data-dev-comment-type="paramref" class="paramref">pos</code>.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -425,7 +441,7 @@ When true, validates with the regex pattern on each input, preventing the input 
       <tr>
         <td><span class="xref">System.Int32</span></td>
         <td><span class="parametername">pos</span></td>
-        <td></td>
+        <td>Current position.</td>
       </tr>
     </tbody>
   </table>
@@ -440,13 +456,17 @@ When true, validates with the regex pattern on each input, preventing the input 
     <tbody>
       <tr>
         <td><span class="xref">System.Int32</span></td>
-        <td></td>
+        <td>New cursor position if any, otherwise returns <code data-dev-comment-type="paramref" class="paramref">pos</code></td>
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_CursorStart_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.CursorStart*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_CursorStart" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.CursorStart">CursorStart()</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+Find the first valid character position.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -463,13 +483,17 @@ When true, validates with the regex pattern on each input, preventing the input 
     <tbody>
       <tr>
         <td><span class="xref">System.Int32</span></td>
-        <td></td>
+        <td>New cursor position.</td>
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Delete_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Delete*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_Delete_System_Int32_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.Delete(System.Int32)">Delete(Int32)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+Deletes the current character in <code data-dev-comment-type="paramref" class="paramref">pos</code>.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -503,13 +527,17 @@ When true, validates with the regex pattern on each input, preventing the input 
     <tbody>
       <tr>
         <td><span class="xref">System.Boolean</span></td>
-        <td></td>
+        <td>true if the character was successfully removed, otherwise false.</td>
       </tr>
     </tbody>
   </table>
+  
+  
   <a id="Terminal_Gui_TextValidateProviders_TextRegexProvider_InsertAt_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.InsertAt*"></a>
   <h4 id="Terminal_Gui_TextValidateProviders_TextRegexProvider_InsertAt_System_Char_System_Int32_" data-uid="Terminal.Gui.TextValidateProviders.TextRegexProvider.InsertAt(System.Char,System.Int32)">InsertAt(Char, Int32)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary">
+Insert character <code data-dev-comment-type="paramref" class="paramref">ch</code> in position <code data-dev-comment-type="paramref" class="paramref">pos</code>.
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -548,7 +576,7 @@ When true, validates with the regex pattern on each input, preventing the input 
     <tbody>
       <tr>
         <td><span class="xref">System.Boolean</span></td>
-        <td></td>
+        <td>true if the character was successfully inserted, otherwise false.</td>
       </tr>
     </tbody>
   </table>
@@ -561,6 +589,10 @@ When true, validates with the regex pattern on each input, preventing the input 
           
           <div class="hidden-sm col-md-2" role="complementary">
             <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
               <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
                 <h5>In This Article</h5>
                 <div></div>

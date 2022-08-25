@@ -44,7 +44,6 @@ namespace Terminal.Gui.Core {
 			Assert.Null (Application.Top);
 			Assert.Null (Application.Current);
 			Assert.Throws<ArgumentNullException> (() => Application.HeightAsBuffer == true);
-			Assert.False (Application.AlwaysSetPosition);
 			Assert.Null (Application.MainLoop);
 			Assert.Null (Application.Iteration);
 			Assert.Null (Application.RootMouseEvent);
@@ -57,7 +56,6 @@ namespace Terminal.Gui.Core {
 			Assert.NotNull (Application.Top);
 			Assert.NotNull (Application.Current);
 			Assert.False (Application.HeightAsBuffer);
-			Assert.False (Application.AlwaysSetPosition);
 			Assert.NotNull (Application.MainLoop);
 			Assert.Null (Application.Iteration);
 			Assert.Null (Application.RootMouseEvent);
@@ -86,6 +84,7 @@ namespace Terminal.Gui.Core {
 			Application.Init (new FakeDriver (), new FakeMainLoop (() => FakeConsole.ReadKey (true)));
 			Assert.NotNull (Application.Driver);
 			Assert.NotNull (Application.MainLoop);
+			Assert.NotNull (SynchronizationContext.Current);
 		}
 
 		void Shutdown ()
@@ -1146,7 +1145,7 @@ namespace Terminal.Gui.Core {
 			var rs = Application.Begin (Application.Top);
 			Assert.Equal (Application.Top, rs.Toplevel);
 			Assert.Null (Application.mouseGrabView);
-			Assert.Null (Application.wantContinuousButtonPressedView);
+			Assert.Null (Application.WantContinuousButtonPressedView);
 			Assert.False (Application.DebugDrawBounds);
 			Assert.False (Application.ShowChild (Application.Top));
 			Application.End (Application.Top);
@@ -1295,45 +1294,119 @@ namespace Terminal.Gui.Core {
 			int numberOfTimeoutsPerThread = 100;
 
 
-			// start lots of threads
-			for (int i = 0; i < numberOfThreads; i++) {
-				
-				var myi = i;
+			lock (Application.Top) {
+				// start lots of threads
+				for (int i = 0; i < numberOfThreads; i++) {
 
-				Task.Run (() => {
-					Task.Delay (100).Wait ();
+					var myi = i;
 
-					// each thread registers lots of 1s timeouts
-					for(int j=0;j< numberOfTimeoutsPerThread; j++) {
+					Task.Run (() => {
+						Task.Delay (100).Wait ();
 
-						Application.MainLoop.AddTimeout (TimeSpan.FromSeconds(1), (s) => {
+						// each thread registers lots of 1s timeouts
+						for (int j = 0; j < numberOfTimeoutsPerThread; j++) {
 
-							// each timeout delegate increments delegatesRun count by 1 every second
-							Interlocked.Increment (ref delegatesRun);
-							return true; 
-						});
-					}
-					 
-					// if this is the first Thread created
-					if (myi == 0) {
+							Application.MainLoop.AddTimeout (TimeSpan.FromSeconds (1), (s) => {
 
-						// let the timeouts run for a bit
-						Task.Delay (5000).Wait ();
+								// each timeout delegate increments delegatesRun count by 1 every second
+								Interlocked.Increment (ref delegatesRun);
+								return true;
+							});
+						}
 
-						// then tell the application to quuit
-						Application.MainLoop.Invoke (() => Application.RequestStop ());
-					}
-				});
+						// if this is the first Thread created
+						if (myi == 0) {
+
+							// let the timeouts run for a bit
+							Task.Delay (5000).Wait ();
+
+							// then tell the application to quit
+							Application.MainLoop.Invoke (() => Application.RequestStop ());
+						}
+					});
+				}
+
+				// blocks here until the RequestStop is processed at the end of the test
+				Application.Run ();
+
+				// undershoot a bit to be on the safe side.  The 5000 ms wait allows the timeouts to run
+				// a lot but all those timeout delegates could end up going slowly on a slow machine perhaps
+				// so the final number of delegatesRun might vary by computer.  So for this assert we say
+				// that it should have run at least 2 seconds worth of delegates
+				Assert.True (delegatesRun >= numberOfThreads * numberOfTimeoutsPerThread * 2);
 			}
+		}
+
+		[Fact]
+		public void SynchronizationContext_Post ()
+		{
+			Init ();
+			var context = SynchronizationContext.Current;
+
+			var success = false;
+			Task.Run (() => {
+				Thread.Sleep (1_000);
+
+				// non blocking
+				context.Post (
+					delegate (object o) {
+						success = true;
+
+						// then tell the application to quit
+						Application.MainLoop.Invoke (() => Application.RequestStop ());
+					}, null);
+				Assert.False (success);
+			});
 
 			// blocks here until the RequestStop is processed at the end of the test
 			Application.Run ();
+			Assert.True (success);
 
-			// undershoot a bit to be on the safe side.  The 5000 ms wait allows the timeouts to run
-			// a lot but all those timeout delegates could end up going slowly on a slow machine perhaps
-			// so the final number of delegatesRun might vary by computer.  So for this assert we say
-			// that it should have run at least 2 seconds worth of delegates
-			Assert.True (delegatesRun >= numberOfThreads * numberOfTimeoutsPerThread * 2);
+			Application.Shutdown ();
+		}
+
+		[Fact]
+		public void SynchronizationContext_Send ()
+		{
+			Init ();
+			var context = SynchronizationContext.Current;
+
+			var success = false;
+			Task.Run (() => {
+				Thread.Sleep (1_000);
+
+				// blocking
+				context.Send (
+					delegate (object o) {
+						success = true;
+
+						// then tell the application to quit
+						Application.MainLoop.Invoke (() => Application.RequestStop ());
+					}, null);
+				Assert.True (success);
+			});
+
+			// blocks here until the RequestStop is processed at the end of the test
+			Application.Run ();
+			Assert.True (success);
+
+			Application.Shutdown ();
+		}
+
+		[Fact]
+		public void SynchronizationContext_CreateCopy ()
+		{
+			Init ();
+
+			var context = SynchronizationContext.Current;
+			Assert.NotNull (context);
+
+			var contextCopy = context.CreateCopy ();
+			Assert.NotNull (contextCopy);
+
+			Assert.NotEqual (context, contextCopy);
+
+			Application.Shutdown ();
 		}
 	}
 }
