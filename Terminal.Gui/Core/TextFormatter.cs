@@ -294,12 +294,6 @@ namespace Terminal.Gui {
 		}
 
 		/// <summary>
-		/// Specifies the mask to apply to the hotkey to tag it as the hotkey. The default value of <c>0x100000</c> causes
-		/// the underlying Rune to be identified as a "private use" Unicode character.
-		/// </summary>HotKeyTagMask
-		public uint HotKeyTagMask { get; set; } = 0x100000;
-
-		/// <summary>
 		/// Gets the cursor position from <see cref="HotKey"/>. If the <see cref="HotKey"/> is defined, the cursor will be positioned over it.
 		/// </summary>
 		public int CursorPosition { get; set; }
@@ -317,8 +311,9 @@ namespace Terminal.Gui {
 			get {
 				// With this check, we protect against subclasses with overrides of Text
 				if (ustring.IsNullOrEmpty (Text) || Size.IsEmpty) {
-					lines = new List<ustring> ();
-					lines.Add (ustring.Empty);
+					lines = new List<ustring> {
+						ustring.Empty
+					};
 					NeedsFormat = false;
 					return lines;
 				}
@@ -356,7 +351,7 @@ namespace Terminal.Gui {
 		}
 
 		/// <summary>
-		/// Gets or sets whether the <see cref="TextFormatter"/> needs to format the text when <see cref="Draw(Rect, Attribute, Attribute, Rect)"/> is called.
+		/// Gets or sets whether the <see cref="TextFormatter"/> needs to format the text when <see cref="Draw(Rect, Attribute, Attribute, Rect, bool)"/> is called.
 		/// If it is <c>false</c> when Draw is called, the Draw call will be faster.
 		/// </summary>
 		/// <remarks>
@@ -417,6 +412,50 @@ namespace Terminal.Gui {
 			return ustring.Make (runes);
 		}
 
+		/// <summary>
+		/// Splits all newlines in the <paramref name="text"/> into a list
+		/// and supports both CRLF and LF, preserving the ending newline.
+		/// </summary>
+		/// <param name="text">The text.</param>
+		/// <returns>A list of text without the newline characters.</returns>
+		public static List<ustring> SplitNewLine (ustring text)
+		{
+			var runes = text.ToRuneList ();
+			var lines = new List<ustring> ();
+			var start = 0;
+			var end = 0;
+
+			for (int i = 0; i < runes.Count; i++) {
+				end = i;
+				switch (runes [i]) {
+				case '\n':
+					lines.Add (ustring.Make (runes.GetRange (start, end - start)));
+					i++;
+					start = i;
+					break;
+
+				case '\r':
+					if ((i + 1) < runes.Count && runes [i + 1] == '\n') {
+						lines.Add (ustring.Make (runes.GetRange (start, end - start)));
+						i += 2;
+						start = i;
+					} else {
+						lines.Add (ustring.Make (runes.GetRange (start, end - start)));
+						i++;
+						start = i;
+					}
+					break;
+				}
+			}
+			if (runes.Count > 0 && lines.Count == 0) {
+				lines.Add (ustring.Make (runes));
+			} else if (runes.Count > 0 && start < runes.Count) {
+				lines.Add (ustring.Make (runes.GetRange (start, runes.Count - start)));
+			} else {
+				lines.Add (ustring.Make (""));
+			}
+			return lines;
+		}
 
 		/// <summary>
 		/// Adds trailing whitespace or truncates <paramref name="text"/>
@@ -649,7 +688,7 @@ namespace Terminal.Gui {
 				textCount = words.Sum (arg => arg.RuneCount);
 			}
 			var spaces = words.Length > 1 ? (width - textCount) / (words.Length - 1) : 0;
-			var extras = words.Length > 1 ? (width - textCount) % words.Length : 0;
+			var extras = words.Length > 1 ? (width - textCount) % (words.Length - 1) : 0;
 
 			var s = new System.Text.StringBuilder ();
 			for (int w = 0; w < words.Length; w++) {
@@ -659,14 +698,20 @@ namespace Terminal.Gui {
 					for (int i = 0; i < spaces; i++)
 						s.Append (spaceChar);
 				if (extras > 0) {
+					for (int i = 0; i < 1; i++)
+						s.Append (spaceChar);
 					extras--;
+				}
+				if (w + 1 == words.Length - 1) {
+					for (int i = 0; i < extras; i++)
+						s.Append (spaceChar);
 				}
 			}
 			return ustring.Make (s.ToString ());
 		}
 
 		static char [] whitespace = new char [] { ' ', '\t' };
-		private int hotKeyPos;
+		private int hotKeyPos = -1;
 
 		/// <summary>
 		/// Reformats text into lines, applying text alignment and optionally wrapping text to new lines on word boundaries.
@@ -789,6 +834,18 @@ namespace Terminal.Gui {
 				}
 			});
 			return max;
+		}
+
+		/// <summary>
+		/// Determines the line with the highest width in the 
+		/// <paramref name="text"/> if it contains newlines.
+		/// </summary>
+		/// <param name="text">Text, may contain newlines.</param>
+		/// <returns>The highest line width.</returns>
+		public static int MaxWidthLine (ustring text)
+		{
+			var result = TextFormatter.SplitNewLine (text);
+			return result.Max (x => x.ConsoleWidth);
 		}
 
 		/// <summary>
@@ -1051,14 +1108,13 @@ namespace Terminal.Gui {
 		/// <returns>The text with the hotkey tagged.</returns>
 		/// <remarks>
 		/// The returned string will not render correctly without first un-doing the tag. To undo the tag, search for 
-		/// Runes with a bitmask of <c>otKeyTagMask</c> and remove that bitmask.
 		/// </remarks>
 		public ustring ReplaceHotKeyWithTag (ustring text, int hotPos)
 		{
 			// Set the high bit
 			var runes = text.ToRuneList ();
 			if (Rune.IsLetterOrNumber (runes [hotPos])) {
-				runes [hotPos] = new Rune ((uint)runes [hotPos] | HotKeyTagMask);
+				runes [hotPos] = new Rune ((uint)runes [hotPos]);
 			}
 			return ustring.Make (runes);
 		}
@@ -1097,7 +1153,8 @@ namespace Terminal.Gui {
 		/// <param name="normalColor">The color to use for all text except the hotkey</param>
 		/// <param name="hotColor">The color to use to draw the hotkey</param>
 		/// <param name="containerBounds">Specifies the screen-relative location and maximum container size.</param>
-		public void Draw (Rect bounds, Attribute normalColor, Attribute hotColor, Rect containerBounds = default)
+		/// <param name="fillRemaining">Determines if the bounds width will be used (default) or only the text width will be used.</param>
+		public void Draw (Rect bounds, Attribute normalColor, Attribute hotColor, Rect containerBounds = default, bool fillRemaining = true)
 		{
 			// With this check, we protect against subclasses with overrides of Text (like Button)
 			if (ustring.IsNullOrEmpty (text)) {
@@ -1119,10 +1176,22 @@ namespace Terminal.Gui {
 			}
 
 			var isVertical = IsVerticalDirection (textDirection);
+			var savedClip = Application.Driver?.Clip;
+			var maxBounds = bounds;
+			if (Application.Driver != null) {
+				Application.Driver.Clip = maxBounds = containerBounds == default
+					? bounds
+					: new Rect (Math.Max (containerBounds.X, bounds.X),
+					Math.Max (containerBounds.Y, bounds.Y),
+					Math.Max (Math.Min (containerBounds.Width, containerBounds.Right - bounds.Left), 0),
+					Math.Max (Math.Min (containerBounds.Height, containerBounds.Bottom - bounds.Top), 0));
+			}
 
 			for (int line = 0; line < linesFormated.Count; line++) {
 				if ((isVertical && line > bounds.Width) || (!isVertical && line > bounds.Height))
 					continue;
+				if ((isVertical && line > maxBounds.Left + maxBounds.Width - bounds.X) || (!isVertical && line > maxBounds.Top + maxBounds.Height - bounds.Y))
+					break;
 
 				var runes = lines [line].ToRunes ();
 
@@ -1199,23 +1268,17 @@ namespace Terminal.Gui {
 				var start = isVertical ? bounds.Top : bounds.Left;
 				var size = isVertical ? bounds.Height : bounds.Width;
 				var current = start;
-				var savedClip = Application.Driver?.Clip;
-				if (Application.Driver != null && containerBounds != default) {
-					Application.Driver.Clip = containerBounds == default
-						? bounds
-						: new Rect (Math.Max (containerBounds.X, bounds.X),
-						Math.Max (containerBounds.Y, bounds.Y),
-						Math.Max (Math.Min (containerBounds.Width, containerBounds.Right - bounds.Left), 0),
-						Math.Max (Math.Min (containerBounds.Height, containerBounds.Bottom - bounds.Top), 0));
-				}
 
 				for (var idx = (isVertical ? start - y : start - x); current < start + size; idx++) {
-					if (idx < 0) {
+					if (!fillRemaining && idx < 0) {
 						current++;
 						continue;
-					} else if (idx > runes.Length - 1) {
+					} else if (!fillRemaining && idx > runes.Length - 1) {
 						break;
 					}
+					if ((!isVertical && idx > maxBounds.Left + maxBounds.Width - bounds.X) || (isVertical && idx > maxBounds.Top + maxBounds.Height - bounds.Y))
+						break;
+
 					var rune = (Rune)' ';
 					if (isVertical) {
 						Application.Driver?.Move (x, current);
@@ -1228,13 +1291,13 @@ namespace Terminal.Gui {
 							rune = runes [idx];
 						}
 					}
-					if ((rune & HotKeyTagMask) == HotKeyTagMask) {
+					if (idx == HotKeyPos) {
 						if ((isVertical && textVerticalAlignment == VerticalTextAlignment.Justified) ||
-						    (!isVertical && textAlignment == TextAlignment.Justified)) {
+						(!isVertical && textAlignment == TextAlignment.Justified)) {
 							CursorPosition = idx - start;
 						}
 						Application.Driver?.SetAttribute (hotColor);
-						Application.Driver?.AddRune ((Rune)((uint)rune & ~HotKeyTagMask));
+						Application.Driver?.AddRune (rune);
 						Application.Driver?.SetAttribute (normalColor);
 					} else {
 						Application.Driver?.AddRune (rune);
@@ -1245,13 +1308,14 @@ namespace Terminal.Gui {
 					} else {
 						current += runeWidth;
 					}
-					if (!isVertical && idx + 1 < runes.Length && current + Rune.ColumnWidth (runes [idx + 1]) > start + size) {
+					var nextRuneWidth = idx + 1 > -1 && idx + 1 < runes.Length ? Rune.ColumnWidth (runes [idx + 1]) : 0;
+					if (!isVertical && idx + 1 < runes.Length && current + nextRuneWidth > start + size) {
 						break;
 					}
 				}
-				if (Application.Driver != null)
-					Application.Driver.Clip = (Rect)savedClip;
 			}
+			if (Application.Driver != null)
+				Application.Driver.Clip = (Rect)savedClip;
 		}
 	}
 }

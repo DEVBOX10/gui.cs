@@ -681,11 +681,13 @@ namespace Terminal.Gui {
 		/// <param name="col">Column to move the cursor to.</param>
 		/// <param name="row">Row to move the cursor to.</param>
 		public abstract void Move (int col, int row);
+
 		/// <summary>
-		/// Adds the specified rune to the display at the current cursor position
+		/// Adds the specified rune to the display at the current cursor position.
 		/// </summary>
 		/// <param name="rune">Rune to add.</param>
 		public abstract void AddRune (Rune rune);
+
 		/// <summary>
 		/// Ensures a Rune is not a control character and can be displayed by translating characters below 0x20
 		/// to equivalent, printable, Unicode chars.
@@ -694,21 +696,13 @@ namespace Terminal.Gui {
 		/// <returns></returns>
 		public static Rune MakePrintable (Rune c)
 		{
-			var controlChars = gethexaformat (c, 4);
-			if (controlChars <= 0x1F || (controlChars >= 0X7F && controlChars <= 0x9F)) {
+			if (c <= 0x1F || (c >= 0X7F && c <= 0x9F)) {
 				// ASCII (C0) control characters.
 				// C1 control characters (https://www.aivosto.com/articles/control-characters.html#c1)
-				return new Rune (controlChars + 0x2400);
-			} else {
-				return c;
+				return new Rune (c + 0x2400);
 			}
-		}
 
-		static uint gethexaformat (uint rune, int length)
-		{
-			var hex = rune.ToString ($"x{length}");
-			var hexstr = hex.Substring (hex.Length - length, length);
-			return (uint)int.Parse (hexstr, System.Globalization.NumberStyles.HexNumber);
+			return c;
 		}
 
 		/// <summary>
@@ -722,10 +716,11 @@ namespace Terminal.Gui {
 			col >= 0 && row >= 0 && col < Cols && row < Rows && clip.Contains (col, row);
 
 		/// <summary>
-		/// Adds the specified
+		/// Adds the <paramref name="str"/> to the display at the cursor position.
 		/// </summary>
 		/// <param name="str">String.</param>
 		public abstract void AddStr (ustring str);
+
 		/// <summary>
 		/// Prepare the driver and set the key and mouse events handlers.
 		/// </summary>
@@ -1338,5 +1333,60 @@ namespace Terminal.Gui {
 		/// </summary>
 		/// <returns>The current attribute.</returns>
 		public abstract Attribute GetAttribute ();
+
+		/// <summary>
+		/// Make the <see cref="Colors"/> for the <see cref="ColorScheme"/>.
+		/// </summary>
+		/// <param name="foreground">The foreground color.</param>
+		/// <param name="background">The background color.</param>
+		/// <returns>The attribute for the foreground and background colors.</returns>
+		public abstract Attribute MakeColor (Color foreground, Color background);
+
+		/// <summary>
+		/// Create all <see cref="Colors"/> with the <see cref="ColorScheme"/> for the console driver.
+		/// </summary>
+		/// <param name="hasColors">Flag indicating if colors are supported.</param>
+		public void CreateColors (bool hasColors = true)
+		{
+			Colors.TopLevel = new ColorScheme ();
+			Colors.Base = new ColorScheme ();
+			Colors.Dialog = new ColorScheme ();
+			Colors.Menu = new ColorScheme ();
+			Colors.Error = new ColorScheme ();
+
+			if (!hasColors) {
+				return;
+			}
+
+			Colors.TopLevel.Normal = MakeColor (Color.BrightGreen, Color.Black);
+			Colors.TopLevel.Focus = MakeColor (Color.White, Color.Cyan);
+			Colors.TopLevel.HotNormal = MakeColor (Color.Brown, Color.Black);
+			Colors.TopLevel.HotFocus = MakeColor (Color.Blue, Color.Cyan);
+			Colors.TopLevel.Disabled = MakeColor (Color.DarkGray, Color.Black);
+
+			Colors.Base.Normal = MakeColor (Color.White, Color.Blue);
+			Colors.Base.Focus = MakeColor (Color.Black, Color.Gray);
+			Colors.Base.HotNormal = MakeColor (Color.BrightCyan, Color.Blue);
+			Colors.Base.HotFocus = MakeColor (Color.BrightBlue, Color.Gray);
+			Colors.Base.Disabled = MakeColor (Color.DarkGray, Color.Blue);
+
+			Colors.Dialog.Normal = MakeColor (Color.Black, Color.Gray);
+			Colors.Dialog.Focus = MakeColor (Color.White, Color.DarkGray);
+			Colors.Dialog.HotNormal = MakeColor (Color.Blue, Color.Gray);
+			Colors.Dialog.HotFocus = MakeColor (Color.BrightYellow, Color.DarkGray);
+			Colors.Dialog.Disabled = MakeColor (Color.Gray, Color.DarkGray);
+
+			Colors.Menu.Normal = MakeColor (Color.White, Color.DarkGray);
+			Colors.Menu.Focus = MakeColor (Color.White, Color.Black);
+			Colors.Menu.HotNormal = MakeColor (Color.BrightYellow, Color.DarkGray);
+			Colors.Menu.HotFocus = MakeColor (Color.BrightYellow, Color.Black);
+			Colors.Menu.Disabled = MakeColor (Color.Gray, Color.DarkGray);
+
+			Colors.Error.Normal = MakeColor (Color.Red, Color.White);
+			Colors.Error.Focus = MakeColor (Color.Black, Color.BrightRed);
+			Colors.Error.HotNormal = MakeColor (Color.Black, Color.White);
+			Colors.Error.HotFocus = MakeColor (Color.White, Color.BrightRed);
+			Colors.Error.Disabled = MakeColor (Color.DarkGray, Color.White);
+		}
 	}
 }

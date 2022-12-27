@@ -73,9 +73,9 @@ namespace UICatalog.Scenarios {
 			void Top_Loaded ()
 			{
 				frame.Height = Dim.Height (widthEdit) + Dim.Height (heightEdit) + Dim.Height (titleEdit) + 2;
-				Top.Loaded -= Top_Loaded;
+				Application.Top.Loaded -= Top_Loaded;
 			}
-			Top.Loaded += Top_Loaded;
+			Application.Top.Loaded += Top_Loaded;
 
 			label = new Label ("Action:") {
 				X = Pos.Center (),
@@ -217,6 +217,7 @@ namespace UICatalog.Scenarios {
 						Height = Dim.Fill (1),
 						WordWrap = true,
 						AllowsTab = false,
+						ColorScheme = Colors.Base
 					};
 					var help = "This is helpful.";
 					fourthStep.Add (someText);

@@ -1504,7 +1504,7 @@ Hello     X
 Y          
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 11, 3), pos);
 
 			label.AutoSize = false;
@@ -1519,7 +1519,7 @@ Hello     X
 Y          
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 11, 3), pos);
 		}
 
@@ -1550,7 +1550,7 @@ o
 Y  
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 3, 11), pos);
 
 			label.AutoSize = false;
@@ -1573,7 +1573,7 @@ o
 Y  
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 3, 11), pos);
 		}
 
@@ -2119,8 +2119,30 @@ Y
 └──────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 8, 4), pos);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void DrawFrame_With_Minimum_Size ()
+		{
+			var view = new View (new Rect (0, 0, 2, 2));
+
+			view.DrawContent += (_) => view.DrawFrame (view.Bounds, 0, true);
+
+			Assert.Equal (Point.Empty, new Point (view.Frame.X, view.Frame.Y));
+			Assert.Equal (new Size (2, 2), new Size (view.Frame.Width, view.Frame.Height));
+
+			Application.Top.Add (view);
+			Application.Begin (Application.Top);
+
+			var expected = @"
+┌┐
+└┘
+";
+
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
+			Assert.Equal (new Rect (0, 0, 2, 2), pos);
 		}
 
 		[Fact, AutoInitShutdown]
@@ -2143,7 +2165,7 @@ Y
 ──────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 7, 4), pos);
 
 			view.Frame = new Rect (-1, -1, 8, 4);
@@ -2155,7 +2177,7 @@ Y
 ──────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (6, 0, 7, 3), pos);
 
 			view.Frame = new Rect (0, 0, 8, 4);
@@ -2168,7 +2190,7 @@ Y
 └──────
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 7, 4), pos);
 
 			view.Frame = new Rect (0, 0, 8, 4);
@@ -2210,7 +2232,7 @@ Y
  └──────────────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CursorRight, new KeyModifiers ())));
@@ -2233,7 +2255,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CursorRight, new KeyModifiers ())));
@@ -2256,7 +2278,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CursorRight, new KeyModifiers ())));
@@ -2279,7 +2301,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CursorRight, new KeyModifiers ())));
@@ -2302,7 +2324,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CursorRight, new KeyModifiers ())));
@@ -2325,7 +2347,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CursorRight, new KeyModifiers ())));
@@ -2348,7 +2370,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CursorRight, new KeyModifiers ())));
@@ -2371,7 +2393,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CtrlMask | Key.Home, new KeyModifiers ())));
@@ -2395,7 +2417,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CursorDown, new KeyModifiers ())));
@@ -2418,7 +2440,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 
 			Assert.True (scrollView.ProcessKey (new KeyEvent (Key.CursorDown, new KeyModifiers ())));
@@ -2441,7 +2463,7 @@ Y
  └──────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 1, 21, 14), pos);
 		}
 
@@ -2452,7 +2474,7 @@ Y
 				Width = Dim.Fill (),
 				Height = Dim.Fill ()
 			};
-			view.LayoutComplete += e => {
+			view.DrawContent += e => {
 				view.DrawFrame (view.Bounds);
 				var savedClip = Application.Driver.Clip;
 				Application.Driver.Clip = new Rect (1, 1, view.Bounds.Width - 2, view.Bounds.Height - 2);
@@ -2481,7 +2503,7 @@ Y
 └──────────────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 20, 10), pos);
 
 			view.Clear ();
@@ -2489,7 +2511,7 @@ Y
 			expected = @"
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (Rect.Empty, pos);
 		}
 
@@ -2500,7 +2522,7 @@ Y
 				Width = Dim.Fill (),
 				Height = Dim.Fill ()
 			};
-			view.LayoutComplete += e => {
+			view.DrawContent += e => {
 				view.DrawFrame (view.Bounds);
 				var savedClip = Application.Driver.Clip;
 				Application.Driver.Clip = new Rect (1, 1, view.Bounds.Width - 2, view.Bounds.Height - 2);
@@ -2529,7 +2551,7 @@ Y
 └──────────────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 20, 10), pos);
 
 			view.Clear (view.Bounds);
@@ -2537,7 +2559,7 @@ Y
 			expected = @"
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (Rect.Empty, pos);
 		}
 
@@ -2604,7 +2626,7 @@ Y
 └──────────────────────────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 32, 32), pos);
 
 			verticalView.Text = $"最初の行{Environment.NewLine}二行目";
@@ -2645,7 +2667,7 @@ Y
 └──────────────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 32, 32), pos);
 		}
 
@@ -2692,7 +2714,7 @@ Y
 └────────────────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 
 			view.Text = "Hello World";
@@ -2729,7 +2751,7 @@ Y
 └────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 
 			view.AutoSize = true;
@@ -2766,7 +2788,7 @@ Y
 └────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 
 			view.TextDirection = TextDirection.TopBottom_LeftRight;
@@ -2802,7 +2824,7 @@ Y
 └────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 
 			view.AutoSize = false;
@@ -2839,7 +2861,7 @@ Y
 └────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 
 			view.PreserveTrailingSpaces = true;
@@ -2875,7 +2897,7 @@ Y
 └────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 
 			view.PreserveTrailingSpaces = false;
@@ -2915,7 +2937,7 @@ Y
 └────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 
 			view.AutoSize = true;
@@ -2951,7 +2973,7 @@ Y
 └────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 		}
 
@@ -3020,7 +3042,7 @@ Y
 └────────────────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 
 			verticalView.Text = $"最初_の行二行目";
@@ -3058,7 +3080,7 @@ Y
 └────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 22, 22), pos);
 		}
 
@@ -3091,7 +3113,7 @@ Y
 └────────────────────────────┘
 ";
 
-			GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 
 			Assert.True (btn.AutoSize);
 			btn.Text = "Say He_llo 你 changed";
@@ -3105,7 +3127,7 @@ Y
 └────────────────────────────┘
 ";
 
-			GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 		}
 
 		[Fact]
@@ -3478,7 +3500,7 @@ Y
 			Assert.False (view.AutoSize);
 			Assert.Equal (new Rect (0, 0, 10, 1), view.Frame);
 			Assert.Equal ("Test", view.TextFormatter.Text);
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 Test
 ", output);
 
@@ -3487,7 +3509,7 @@ Test
 			Assert.Equal (new Rect (0, 0, 10, 1), view.Frame);
 			Assert.Equal ("First line\nSecond line", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 First line
 ", output);
 
@@ -3496,7 +3518,7 @@ First line
 			Assert.Equal (new Rect (0, 0, 11, 2), view.Frame);
 			Assert.Equal ("First line\nSecond line", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 First line 
 Second line
 ", output);
@@ -3506,7 +3528,7 @@ Second line
 			Assert.Equal (new Rect (0, 0, 10, 1), view.Frame);
 			Assert.Equal ("First line\nSecond line", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 First line
 ", output);
 		}
@@ -3554,7 +3576,7 @@ First line
 			Assert.False (view.AutoSize);
 			Assert.Equal (new Rect (0, 0, 1, 10), view.Frame);
 			Assert.Equal ("Test", view.TextFormatter.Text);
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 T
 e
 s
@@ -3566,7 +3588,7 @@ t
 			Assert.Equal (new Rect (0, 0, 1, 10), view.Frame);
 			Assert.Equal ("First line\nSecond line", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 F
 i
 r
@@ -3584,7 +3606,7 @@ e
 			Assert.Equal (new Rect (0, 0, 2, 11), view.Frame);
 			Assert.Equal ("First line\nSecond line", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 FS
 ie
 rc
@@ -3603,7 +3625,7 @@ en
 			Assert.Equal (new Rect (0, 0, 1, 10), view.Frame);
 			Assert.Equal ("First line\nSecond line", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 F
 i
 r
@@ -3658,7 +3680,7 @@ e
 			Assert.False (view.AutoSize);
 			Assert.Equal (new Rect (0, 0, 10, 1), view.Frame);
 			Assert.Equal ("Test 你", view.TextFormatter.Text);
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 Test 你
 ", output);
 
@@ -3667,7 +3689,7 @@ Test 你
 			Assert.Equal (new Rect (0, 0, 10, 1), view.Frame);
 			Assert.Equal ("First line 你\nSecond line 你", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 First line
 ", output);
 
@@ -3676,7 +3698,7 @@ First line
 			Assert.Equal (new Rect (0, 0, 14, 2), view.Frame);
 			Assert.Equal ("First line 你\nSecond line 你", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 First line 你 
 Second line 你
 ", output);
@@ -3686,7 +3708,7 @@ Second line 你
 			Assert.Equal (new Rect (0, 0, 10, 1), view.Frame);
 			Assert.Equal ("First line 你\nSecond line 你", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 First line
 ", output);
 		}
@@ -3736,7 +3758,7 @@ First line
 			// SetMinWidthHeight ensuring the minimum width for the wide char
 			Assert.Equal (new Rect (0, 0, 2, 10), view.Frame);
 			Assert.Equal ("Test 你", view.TextFormatter.Text);
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 T 
 e 
 s 
@@ -3750,7 +3772,7 @@ t
 			Assert.Equal (new Rect (0, 0, 2, 10), view.Frame);
 			Assert.Equal ("First line 你\nSecond line 你", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 F
 i
 r
@@ -3768,7 +3790,7 @@ e
 			Assert.Equal (new Rect (0, 0, 4, 13), view.Frame);
 			Assert.Equal ("First line 你\nSecond line 你", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 F S 
 i e 
 r c 
@@ -3789,7 +3811,7 @@ e n
 			Assert.Equal (new Rect (0, 0, 2, 10), view.Frame);
 			Assert.Equal ("First line 你\nSecond line 你", view.TextFormatter.Text);
 			Application.Refresh ();
-			GraphViewTests.AssertDriverContentsWithFrameAre (@"
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
 F
 i
 r
@@ -3803,5 +3825,297 @@ e
 ", output);
 		}
 
+		[Fact, AutoInitShutdown]
+		public void Visible_Clear_The_View_Output ()
+		{
+			var label = new Label ("Testing visibility.");
+			var win = new Window ();
+			win.Add (label);
+			var top = Application.Top;
+			top.Add (win);
+			Application.Begin (top);
+
+			Assert.True (label.Visible);
+			((FakeDriver)Application.Driver).SetBufferSize (30, 5);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+┌────────────────────────────┐
+│Testing visibility.         │
+│                            │
+│                            │
+└────────────────────────────┘
+", output);
+
+			label.Visible = false;
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+┌────────────────────────────┐
+│                            │
+│                            │
+│                            │
+└────────────────────────────┘
+", output);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void ClearOnVisibleFalse_Gets_Sets ()
+		{
+			var text = "This is a test\nThis is a test\nThis is a test\nThis is a test\nThis is a test\nThis is a test";
+			var label = new Label (text);
+			Application.Top.Add (label);
+
+			var sbv = new ScrollBarView (label, true, false) {
+				Size = 100,
+				ClearOnVisibleFalse = false
+			};
+			Application.Begin (Application.Top);
+
+			Assert.True (sbv.Visible);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+This is a tes▲
+This is a tes┬
+This is a tes┴
+This is a tes░
+This is a tes░
+This is a tes▼
+", output);
+
+			sbv.Visible = false;
+			Assert.False (sbv.Visible);
+			Application.Top.Redraw (Application.Top.Bounds);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+This is a test
+This is a test
+This is a test
+This is a test
+This is a test
+This is a test
+", output);
+
+			sbv.Visible = true;
+			Assert.True (sbv.Visible);
+			Application.Top.Redraw (Application.Top.Bounds);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+This is a tes▲
+This is a tes┬
+This is a tes┴
+This is a tes░
+This is a tes░
+This is a tes▼
+", output);
+
+			sbv.ClearOnVisibleFalse = true;
+			sbv.Visible = false;
+			Assert.False (sbv.Visible);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+This is a tes
+This is a tes
+This is a tes
+This is a tes
+This is a tes
+This is a tes
+", output);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void DrawContentComplete_Event_Is_Always_Called ()
+		{
+			var viewCalled = false;
+			var tvCalled = false;
+
+			var view = new View ("View") { Width = 10, Height = 10 };
+			view.DrawContentComplete += (e) => viewCalled = true;
+			var tv = new TextView () { Y = 11, Width = 10, Height = 10 };
+			tv.DrawContentComplete += (e) => tvCalled = true;
+
+			Application.Top.Add (view, tv);
+			Application.Begin (Application.Top);
+
+			Assert.True (viewCalled);
+			Assert.True (tvCalled);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void KeyDown_And_KeyUp_Events_Must_Called_Before_OnKeyDown_And_OnKeyUp ()
+		{
+			var keyDown = false;
+			var keyPress = false;
+			var keyUp = false;
+
+			var view = new DerivedView ();
+			view.KeyDown += (e) => {
+				Assert.Equal (Key.a, e.KeyEvent.Key);
+				Assert.False (keyDown);
+				Assert.False (view.IsKeyDown);
+				e.Handled = true;
+				keyDown = true;
+			};
+			view.KeyPress += (e) => {
+				Assert.Equal (Key.a, e.KeyEvent.Key);
+				Assert.False (keyPress);
+				Assert.False (view.IsKeyPress);
+				e.Handled = true;
+				keyPress = true;
+			};
+			view.KeyUp += (e) => {
+				Assert.Equal (Key.a, e.KeyEvent.Key);
+				Assert.False (keyUp);
+				Assert.False (view.IsKeyUp);
+				e.Handled = true;
+				keyUp = true;
+			};
+
+			Application.Top.Add (view);
+
+			Console.MockKeyPresses.Push (new ConsoleKeyInfo ('a', ConsoleKey.A, false, false, false));
+
+			Application.Iteration += () => Application.RequestStop ();
+
+			Assert.True (view.CanFocus);
+
+			Application.Run ();
+			Application.Shutdown ();
+
+			Assert.True (keyDown);
+			Assert.True (keyPress);
+			Assert.True (keyUp);
+			Assert.False (view.IsKeyDown);
+			Assert.False (view.IsKeyPress);
+			Assert.False (view.IsKeyUp);
+		}
+
+		public class DerivedView : View {
+			public DerivedView ()
+			{
+				CanFocus = true;
+			}
+
+			public bool IsKeyDown { get; set; }
+			public bool IsKeyPress { get; set; }
+			public bool IsKeyUp { get; set; }
+
+			public override bool OnKeyDown (KeyEvent keyEvent)
+			{
+				IsKeyDown = true;
+				return true;
+			}
+
+			public override bool ProcessKey (KeyEvent keyEvent)
+			{
+				IsKeyPress = true;
+				return true;
+			}
+
+			public override bool OnKeyUp (KeyEvent keyEvent)
+			{
+				IsKeyUp = true;
+				return true;
+			}
+		}
+
+		[Theory, AutoInitShutdown]
+		[InlineData (true, false, false)]
+		[InlineData (true, true, false)]
+		[InlineData (true, true, true)]
+		public void KeyDown_And_KeyUp_Events_With_Only_Key_Modifiers (bool shift, bool alt, bool control)
+		{
+			var keyDown = false;
+			var keyPress = false;
+			var keyUp = false;
+
+			var view = new DerivedView ();
+			view.KeyDown += (e) => {
+				Assert.Equal (-1, e.KeyEvent.KeyValue);
+				Assert.Equal (shift, e.KeyEvent.IsShift);
+				Assert.Equal (alt, e.KeyEvent.IsAlt);
+				Assert.Equal (control, e.KeyEvent.IsCtrl);
+				Assert.False (keyDown);
+				Assert.False (view.IsKeyDown);
+				keyDown = true;
+			};
+			view.KeyPress += (e) => {
+				keyPress = true;
+			};
+			view.KeyUp += (e) => {
+				Assert.Equal (-1, e.KeyEvent.KeyValue);
+				Assert.Equal (shift, e.KeyEvent.IsShift);
+				Assert.Equal (alt, e.KeyEvent.IsAlt);
+				Assert.Equal (control, e.KeyEvent.IsCtrl);
+				Assert.False (keyUp);
+				Assert.False (view.IsKeyUp);
+				keyUp = true;
+			};
+
+			Application.Top.Add (view);
+
+			Console.MockKeyPresses.Push (new ConsoleKeyInfo ('\0', (ConsoleKey)'\0', shift, alt, control));
+
+			Application.Iteration += () => Application.RequestStop ();
+
+			Assert.True (view.CanFocus);
+
+			Application.Run ();
+			Application.Shutdown ();
+
+			Assert.True (keyDown);
+			Assert.False (keyPress);
+			Assert.True (keyUp);
+			Assert.True (view.IsKeyDown);
+			Assert.False (view.IsKeyPress);
+			Assert.True (view.IsKeyUp);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void SetHasFocus_Do_Not_Throws_If_OnLeave_Remove_Focused_Changing_To_Null ()
+		{
+			var view1Leave = false;
+			var subView1Leave = false;
+			var subView1subView1Leave = false;
+			var top = Application.Top;
+			var view1 = new View { CanFocus = true };
+			var subView1 = new View { CanFocus = true };
+			var subView1subView1 = new View { CanFocus = true };
+			view1.Leave += (e) => {
+				view1Leave = true;
+			};
+			subView1.Leave += (e) => {
+				subView1.Remove (subView1subView1);
+				subView1Leave = true;
+			};
+			view1.Add (subView1);
+			subView1subView1.Leave += (e) => {
+				// This is never invoked
+				subView1subView1Leave = true;
+			};
+			subView1.Add (subView1subView1);
+			var view2 = new View { CanFocus = true };
+			top.Add (view1, view2);
+			Application.Begin (top);
+
+			view2.SetFocus ();
+			Assert.True (view1Leave);
+			Assert.True (subView1Leave);
+			Assert.False (subView1subView1Leave);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void GetNormalColor_ColorScheme ()
+		{
+			var view = new View { ColorScheme = Colors.Base };
+
+			Assert.Equal (view.ColorScheme.Normal, view.GetNormalColor ());
+
+			view.Enabled = false;
+			Assert.Equal (view.ColorScheme.Disabled, view.GetNormalColor ());
+		}
+
+		[Fact, AutoInitShutdown]
+		public void GetHotNormalColor_ColorScheme ()
+		{
+			var view = new View { ColorScheme = Colors.Base };
+
+			Assert.Equal (view.ColorScheme.HotNormal, view.GetHotNormalColor ());
+
+			view.Enabled = false;
+			Assert.Equal (view.ColorScheme.Disabled, view.GetHotNormalColor ());
+		}
 	}
 }

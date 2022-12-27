@@ -43,28 +43,28 @@ namespace Terminal.Gui.Views {
 			d.SetBufferSize (width, 3);
 
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, new Button (btnText));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Justify
 			buttonRow = $"{d.VLine}      {d.LeftBracket} {btnText} {d.RightBracket}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Justify, new Button (btnText));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Right
 			buttonRow = $"{d.VLine}      {d.LeftBracket} {btnText} {d.RightBracket}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Right, new Button (btnText));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Left
 			buttonRow = $"{d.VLine}{d.LeftBracket} {btnText} {d.RightBracket}      {d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Left, new Button (btnText));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 		}
 
@@ -91,28 +91,28 @@ namespace Terminal.Gui.Views {
 			d.SetBufferSize (buttonRow.Length, 3);
 
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, new Button (btn1Text), new Button (btn2Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Justify
 			buttonRow = $@"{d.VLine}{btn1}   {btn2}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Justify, new Button (btn1Text), new Button (btn2Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Right
 			buttonRow = $@"{d.VLine}  {btn1} {btn2}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Right, new Button (btn1Text), new Button (btn2Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Left
 			buttonRow = $@"{d.VLine}{btn1} {btn2}  {d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Left, new Button (btn1Text), new Button (btn2Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 		}
 
@@ -142,15 +142,15 @@ namespace Terminal.Gui.Views {
 			Dialog dlg = null;
 			Button button1, button2;
 
-			//// Default (Center)
-			//button1 = new Button (btn1Text);
-			//button2 = new Button (btn2Text);
-			//(runstate, dlg) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, button1, button2);
-			//button1.Visible = false;
-			//Application.RunMainLoopIteration (ref runstate, true, ref firstIteration);
-			//buttonRow = $@"{d.VLine}         {btn2} {d.VLine}";
-			//GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
-			//Application.End (runstate);
+			// Default (Center)
+			button1 = new Button (btn1Text);
+			button2 = new Button (btn2Text);
+			(runstate, dlg) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, button1, button2);
+			button1.Visible = false;
+			Application.RunMainLoopIteration (ref runstate, true, ref firstIteration);
+			buttonRow = $@"{d.VLine}         {btn2} {d.VLine}";
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			Application.End (runstate);
 
 			// Justify
 			Assert.Equal (width, buttonRow.Length);
@@ -160,22 +160,29 @@ namespace Terminal.Gui.Views {
 			button1.Visible = false;
 			Application.RunMainLoopIteration (ref runstate, true, ref firstIteration);
 			buttonRow = $@"{d.VLine}          {btn2}{d.VLine}";
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
-			//// Right
-			//buttonRow = $@"{d.VLine}  {btn1} {btn2}{d.VLine}";
-			//Assert.Equal (width, buttonRow.Length);
-			//(runstate, dlg) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Right, new Button (btn1Text), new Button (btn2Text));
-			//GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
-			//Application.End (runstate);
+			// Right
+			Assert.Equal (width, buttonRow.Length);
+			button1 = new Button (btn1Text);
+			button2 = new Button (btn2Text);
+			(runstate, dlg) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Right, button1, button2);
+			button1.Visible = false;
+			Application.RunMainLoopIteration (ref runstate, true, ref firstIteration);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			Application.End (runstate);
 
-			//// Left
-			//buttonRow = $@"{d.VLine}{btn1} {btn2}  {d.VLine}";
-			//Assert.Equal (width, buttonRow.Length);
-			//(runstate, dlg) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Left, new Button (btn1Text), new Button (btn2Text));
-			//GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
-			//Application.End (runstate);
+			// Left
+			Assert.Equal (width, buttonRow.Length);
+			button1 = new Button (btn1Text);
+			button2 = new Button (btn2Text);
+			(runstate, dlg) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Left, button1, button2);
+			button1.Visible = false;
+			Application.RunMainLoopIteration (ref runstate, true, ref firstIteration);
+			buttonRow = $@"{d.VLine}        {btn2}  {d.VLine}";
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			Application.End (runstate);
 		}
 
 		[Fact]
@@ -203,28 +210,28 @@ namespace Terminal.Gui.Views {
 			d.SetBufferSize (buttonRow.Length, 3);
 
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Justify
 			buttonRow = $@"{d.VLine}{btn1}  {btn2}  {btn3}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Justify, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Right
 			buttonRow = $@"{d.VLine}  {btn1} {btn2} {btn3}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Right, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Left
 			buttonRow = $@"{d.VLine}{btn1} {btn2} {btn3}  {d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Left, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 		}
 
@@ -256,28 +263,83 @@ namespace Terminal.Gui.Views {
 
 			// Default - Center
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Justify
 			buttonRow = $"{d.VLine}{btn1} {btn2}  {btn3}  {btn4}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Justify, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Right
 			buttonRow = $"{d.VLine}  {btn1} {btn2} {btn3} {btn4}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Right, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Left
 			buttonRow = $"{d.VLine}{btn1} {btn2} {btn3} {btn4}  {d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Left, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			Application.End (runstate);
+		}
+
+		[Fact]
+		[AutoInitShutdown]
+		public void ButtonAlignment_Four_On_Smaller_Width ()
+		{
+			Application.RunState runstate = null;
+
+			var d = ((FakeDriver)Application.Driver);
+
+			var title = "1234";
+
+			// E.g "|[ yes ][ no ][ maybe ][ never ]|"
+			var btn1Text = "yes";
+			var btn1 = $"{d.LeftBracket} {btn1Text} {d.RightBracket}";
+			var btn2Text = "no";
+			var btn2 = $"{d.LeftBracket} {btn2Text} {d.RightBracket}";
+			var btn3Text = "maybe";
+			var btn3 = $"{d.LeftBracket} {btn3Text} {d.RightBracket}";
+			var btn4Text = "never";
+			var btn4 = $"{d.LeftBracket} {btn4Text} {d.RightBracket}";
+
+			var buttonRow = $"{d.VLine} {btn1} {btn2} {btn3} {btn4} {d.VLine}";
+			var width = buttonRow.Length;
+			var topRow = "34 ───────────────────────────";
+			var bottomRow = "──────────────────────────────";
+			d.SetBufferSize (30, 3);
+
+			// Default - Center
+			buttonRow = $"yes ] {btn2} {btn3} [ never";
+			Assert.NotEqual (width, buttonRow.Length);
+			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			Application.End (runstate);
+
+			// Justify
+			buttonRow = $"es ] {btn2}  {btn3}  [ neve";
+			Assert.NotEqual (width, buttonRow.Length);
+			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Justify, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			Application.End (runstate);
+
+			// Right
+			buttonRow = $" yes ] {btn2} {btn3} [ neve";
+			Assert.NotEqual (width, buttonRow.Length);
+			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Right, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			Application.End (runstate);
+
+			// Left
+			buttonRow = $"es ] {btn2} {btn3} [ never ";
+			Assert.NotEqual (width, buttonRow.Length);
+			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Left, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 		}
 
@@ -312,28 +374,28 @@ namespace Terminal.Gui.Views {
 
 			// Default - Center
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Justify
 			buttonRow = $"{d.VLine}{btn1}    {btn2}     {btn3}     {btn4}{d.VLine}";
 			Assert.Equal (width, ustring.Make (buttonRow).ConsoleWidth);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Justify, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Right
 			buttonRow = $"{d.VLine}           {btn1} {btn2} {btn3} {btn4}{d.VLine}";
 			Assert.Equal (width, ustring.Make (buttonRow).ConsoleWidth);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Right, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Left
 			buttonRow = $"{d.VLine}{btn1} {btn2} {btn3} {btn4}           {d.VLine}";
 			Assert.Equal (width, ustring.Make (buttonRow).ConsoleWidth);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Left, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 		}
 
@@ -367,28 +429,28 @@ namespace Terminal.Gui.Views {
 
 			// Default - Center
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Justify
 			buttonRow = $"{d.VLine}{btn1}    {btn2}     {btn3}     {btn4}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Justify, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Right
 			buttonRow = $"{d.VLine}           {btn1} {btn2} {btn3} {btn4}{d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Right, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Left
 			buttonRow = $"{d.VLine}{btn1} {btn2} {btn3} {btn4}           {d.VLine}";
 			Assert.Equal (width, buttonRow.Length);
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Left, new Button (btn1Text), new Button (btn2Text), new Button (btn3Text), new Button (btn4Text));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 		}
 
@@ -409,7 +471,7 @@ namespace Terminal.Gui.Views {
 			d.SetBufferSize (buttonRow.Length, 3);
 
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, null);
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 
 			Application.End (runstate);
 		}
@@ -432,7 +494,7 @@ namespace Terminal.Gui.Views {
 			d.SetBufferSize (buttonRow.Length, 3);
 
 			(runstate, var _) = RunButtonTestDialog (title, width, Dialog.ButtonAlignments.Center, new Button (btnText));
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 		}
 
@@ -461,56 +523,56 @@ namespace Terminal.Gui.Views {
 			var dlg = new Dialog (title, width, 3, new Button (btn1Text)) { ButtonAlignment = Dialog.ButtonAlignments.Center };
 			runstate = Application.Begin (dlg);
 			var buttonRow = $"{d.VLine}    {btn1}     {d.VLine}";
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 
 			// Now add a second button
 			buttonRow = $"{d.VLine} {btn1} {btn2} {d.VLine}";
 			dlg.AddButton (new Button (btn2Text));
 			bool first = false;
 			Application.RunMainLoopIteration (ref runstate, true, ref first);
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Justify
 			dlg = new Dialog (title, width, 3, new Button (btn1Text)) { ButtonAlignment = Dialog.ButtonAlignments.Justify };
 			runstate = Application.Begin (dlg);
 			buttonRow = $"{d.VLine}         {btn1}{d.VLine}";
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 
 			// Now add a second button
 			buttonRow = $"{d.VLine}{btn1}   {btn2}{d.VLine}";
 			dlg.AddButton (new Button (btn2Text));
 			first = false;
 			Application.RunMainLoopIteration (ref runstate, true, ref first);
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Right
 			dlg = new Dialog (title, width, 3, new Button (btn1Text)) { ButtonAlignment = Dialog.ButtonAlignments.Right };
 			runstate = Application.Begin (dlg);
 			buttonRow = $"{d.VLine}{new String (' ', width - btn1.Length - 2)}{btn1}{d.VLine}";
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 
 			// Now add a second button
 			buttonRow = $"{d.VLine}  {btn1} {btn2}{d.VLine}";
 			dlg.AddButton (new Button (btn2Text));
 			first = false;
 			Application.RunMainLoopIteration (ref runstate, true, ref first);
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 
 			// Left
 			dlg = new Dialog (title, width, 3, new Button (btn1Text)) { ButtonAlignment = Dialog.ButtonAlignments.Left };
 			runstate = Application.Begin (dlg);
 			buttonRow = $"{d.VLine}{btn1}{new String (' ', width - btn1.Length - 2)}{d.VLine}";
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 
 			// Now add a second button
 			buttonRow = $"{d.VLine}{btn1} {btn2}  {d.VLine}";
 			dlg.AddButton (new Button (btn2Text));
 			first = false;
 			Application.RunMainLoopIteration (ref runstate, true, ref first);
-			GraphViewTests.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
+			TestHelpers.AssertDriverContentsWithFrameAre ($"{topRow}\n{buttonRow}\n{bottomRow}", output);
 			Application.End (runstate);
 		}
 	}

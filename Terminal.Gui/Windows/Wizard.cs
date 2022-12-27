@@ -159,7 +159,7 @@ namespace Terminal.Gui {
 			public event Action<TitleEventArgs> TitleChanged;
 
 			// The contentView works like the ContentView in FrameView.
-			private View contentView = new View ();
+			private View contentView = new View () { Data = "WizardContentView" };
 
 			/// <summary>
 			/// Sets or gets help text for the <see cref="WizardStep"/>.If <see cref="WizardStep.HelpText"/> is empty
@@ -203,11 +203,6 @@ namespace Terminal.Gui {
 
 				base.Add (contentView);
 
-				helpTextView.ColorScheme = new ColorScheme () {  
-					Normal = new Attribute(Color.Gray, Color.DarkGray),
-					Focus = new Attribute(Color.DarkGray, Color.Gray),
-					HotFocus = new Attribute(Color.White, Color.DarkGray)
-				};
 				helpTextView.ReadOnly = true;
 				helpTextView.WordWrap = true;
 				base.Add (helpTextView);

@@ -191,7 +191,7 @@ namespace Terminal.Gui {
 				background: MapCursesColor (background));
 		}
 
-		static Attribute MakeColor (Color fore, Color back)
+		public override Attribute MakeColor (Color fore, Color back)
 		{
 			return MakeColor ((short)MapColor (fore), (short)MapColor (back));
 		}
@@ -617,7 +617,7 @@ namespace Terminal.Gui {
 			return keyModifiers;
 		}
 
-		void ProcessInput (Action<KeyEvent> keyHandler, Action<KeyEvent> keyDownHandler, Action<KeyEvent> keyUpHandler, Action<MouseEvent> mouseHandler)
+		void ProcessInput ()
 		{
 			int wch;
 			var code = Curses.get_wch (out wch);
@@ -663,7 +663,7 @@ namespace Terminal.Gui {
 
 			// Special handling for ESC, we want to try to catch ESC+letter to simulate alt-letter as well as Alt-Fkey
 			if (wch == 27) {
-				Curses.timeout (200);
+				Curses.timeout (10);
 
 				code = Curses.get_wch (out int wch2);
 
@@ -787,6 +787,8 @@ namespace Terminal.Gui {
 		}
 
 		Action<KeyEvent> keyHandler;
+		Action<KeyEvent> keyDownHandler;
+		Action<KeyEvent> keyUpHandler;
 		Action<MouseEvent> mouseHandler;
 
 		public override void PrepareToRun (MainLoop mainLoop, Action<KeyEvent> keyHandler, Action<KeyEvent> keyDownHandler, Action<KeyEvent> keyUpHandler, Action<MouseEvent> mouseHandler)
@@ -794,12 +796,14 @@ namespace Terminal.Gui {
 			// Note: Curses doesn't support keydown/up events and thus any passed keyDown/UpHandlers will never be called
 			Curses.timeout (0);
 			this.keyHandler = keyHandler;
+			this.keyDownHandler = keyDownHandler;
+			this.keyUpHandler = keyUpHandler;
 			this.mouseHandler = mouseHandler;
 
 			var mLoop = mainLoop.Driver as UnixMainLoop;
 
 			mLoop.AddWatch (0, UnixMainLoop.Condition.PollIn, x => {
-				ProcessInput (keyHandler, keyDownHandler, keyUpHandler, mouseHandler);
+				ProcessInput ();
 				return true;
 			});
 
@@ -820,6 +824,7 @@ namespace Terminal.Gui {
 				//Console.Out.Flush ();
 
 				window = Curses.initscr ();
+				Curses.set_escdelay (10);
 			} catch (Exception e) {
 				throw new Exception ($"Curses failed to initialize, the exception is: {e.Message}");
 			}
@@ -889,51 +894,14 @@ namespace Terminal.Gui {
 			//UpArrow = Curses.ACS_UARROW;
 			//DownArrow = Curses.ACS_DARROW;
 
-			Colors.TopLevel = new ColorScheme ();
-			Colors.Base = new ColorScheme ();
-			Colors.Dialog = new ColorScheme ();
-			Colors.Menu = new ColorScheme ();
-			Colors.Error = new ColorScheme ();
-
 			if (Curses.HasColors) {
 				Curses.StartColor ();
 				Curses.UseDefaultColors ();
 
-				Colors.TopLevel.Normal = MakeColor (Color.Green, Color.Black);
-				Colors.TopLevel.Focus = MakeColor (Color.White, Color.Cyan);
-				Colors.TopLevel.HotNormal = MakeColor (Color.Brown, Color.Black);
-				Colors.TopLevel.HotFocus = MakeColor (Color.Blue, Color.Cyan);
-				Colors.TopLevel.Disabled = MakeColor (Color.DarkGray, Color.Black);
-
-				Colors.Base.Normal = MakeColor (Color.White, Color.Blue);
-				Colors.Base.Focus = MakeColor (Color.Black, Color.Gray);
-				Colors.Base.HotNormal = MakeColor (Color.BrightCyan, Color.Blue);
-				Colors.Base.HotFocus = MakeColor (Color.BrightBlue, Color.Gray);
-				Colors.Base.Disabled = MakeColor (Color.DarkGray, Color.Blue);
-
-				// Focused,
-				//    Selected, Hot: Yellow on Black
-				//    Selected, text: white on black
-				//    Unselected, hot: yellow on cyan
-				//    unselected, text: same as unfocused
-				Colors.Menu.Normal = MakeColor (Color.White, Color.DarkGray);
-				Colors.Menu.Focus = MakeColor (Color.White, Color.Black);
-				Colors.Menu.HotNormal = MakeColor (Color.BrightYellow, Color.DarkGray);
-				Colors.Menu.HotFocus = MakeColor (Color.BrightYellow, Color.Black);
-				Colors.Menu.Disabled = MakeColor (Color.Gray, Color.DarkGray);
-
-				Colors.Dialog.Normal = MakeColor (Color.Black, Color.Gray);
-				Colors.Dialog.Focus = MakeColor (Color.White, Color.DarkGray);
-				Colors.Dialog.HotNormal = MakeColor (Color.Blue, Color.Gray);
-				Colors.Dialog.HotFocus = MakeColor (Color.Blue, Color.DarkGray);
-				Colors.Dialog.Disabled = MakeColor (Color.DarkGray, Color.Gray);
-
-				Colors.Error.Normal = MakeColor (Color.Red, Color.White);
-				Colors.Error.Focus = MakeColor (Color.White, Color.Red);
-				Colors.Error.HotNormal = MakeColor (Color.Black, Color.White);
-				Colors.Error.HotFocus = MakeColor (Color.Black, Color.Red);
-				Colors.Error.Disabled = MakeColor (Color.DarkGray, Color.White);
+				CreateColors ();
 			} else {
+				CreateColors (false);
+
 				Colors.TopLevel.Normal = Curses.COLOR_GREEN;
 				Colors.TopLevel.Focus = Curses.COLOR_WHITE;
 				Colors.TopLevel.HotNormal = Curses.COLOR_YELLOW;
@@ -1164,26 +1132,48 @@ namespace Terminal.Gui {
 			return false;
 		}
 
-		public override void SendKeys (char keyChar, ConsoleKey key, bool shift, bool alt, bool control)
+		public override void SendKeys (char keyChar, ConsoleKey consoleKey, bool shift, bool alt, bool control)
 		{
-			Key k;
+			Key key;
 
-			if ((shift || alt || control)
-				&& keyChar - (int)Key.Space >= (uint)Key.A && keyChar - (int)Key.Space <= (uint)Key.Z) {
-				k = (Key)(keyChar - (uint)Key.Space);
+			if (consoleKey == ConsoleKey.Packet) {
+				ConsoleModifiers mod = new ConsoleModifiers ();
+				if (shift) {
+					mod |= ConsoleModifiers.Shift;
+				}
+				if (alt) {
+					mod |= ConsoleModifiers.Alt;
+				}
+				if (control) {
+					mod |= ConsoleModifiers.Control;
+				}
+				var kchar = ConsoleKeyMapping.GetKeyCharFromConsoleKey (keyChar, mod, out uint ckey, out _);
+				key = ConsoleKeyMapping.MapConsoleKeyToKey ((ConsoleKey)ckey, out bool mappable);
+				if (mappable) {
+					key = (Key)kchar;
+				}
 			} else {
-				k = (Key)keyChar;
+				key = (Key)keyChar;
 			}
+
+			KeyModifiers km = new KeyModifiers ();
 			if (shift) {
-				k |= Key.ShiftMask;
+				if (keyChar == 0) {
+					key |= Key.ShiftMask;
+				}
+				km.Shift = shift;
 			}
 			if (alt) {
-				k |= Key.AltMask;
+				key |= Key.AltMask;
+				km.Alt = alt;
 			}
 			if (control) {
-				k |= Key.CtrlMask;
+				key |= Key.CtrlMask;
+				km.Ctrl = control;
 			}
-			keyHandler (new KeyEvent (k, MapKeyModifiers (k)));
+			keyDownHandler (new KeyEvent (key, km));
+			keyHandler (new KeyEvent (key, km));
+			keyUpHandler (new KeyEvent (key, km));
 		}
 
 		public override bool GetColors (int value, out Color foreground, out Color background)
@@ -1536,6 +1526,7 @@ namespace Terminal.Gui {
 				}
 			}) {
 				powershell.Start ();
+				powershell.WaitForExit ();
 				if (!powershell.DoubleWaitForExit ()) {
 					var timeoutError = $@"Process timed out. Command line: bash {powershell.StartInfo.Arguments}.
 							Output: {powershell.StandardOutput.ReadToEnd ()}

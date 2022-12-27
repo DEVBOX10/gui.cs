@@ -1093,11 +1093,11 @@ namespace Terminal.Gui.Core {
 			text = "A sentence has words.";
 			// should fit
 			maxWidth = text.RuneCount + 1;
-			expectedClippedWidth = Math.Min (text.RuneCount, maxWidth);
+			expectedClippedWidth = Math.Max (text.RuneCount, maxWidth);
 			justifiedText = TextFormatter.ClipAndJustify (text, maxWidth, align);
-			//Assert.Equal (expectedClippedWidth, justifiedText.RuneCount);
+			Assert.Equal (expectedClippedWidth, justifiedText.RuneCount);
 			Assert.True (expectedClippedWidth <= maxWidth);
-			Assert.Equal (ustring.Make (text.ToRunes () [0..expectedClippedWidth]), justifiedText);
+			Assert.Throws<ArgumentOutOfRangeException> (() => ustring.Make (text.ToRunes () [0..expectedClippedWidth]));
 
 			// Should fit.
 			maxWidth = text.RuneCount + 0;
@@ -1205,7 +1205,6 @@ namespace Terminal.Gui.Core {
 			Assert.Equal (ustring.Make (text.ToRunes () [0..expectedClippedWidth]), justifiedText);
 
 			// see Justify_ tests below
-
 		}
 
 		[Fact]
@@ -1310,7 +1309,7 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+");
+			justifiedText = "012++456+89";
 			forceToWidth = text.RuneCount + 1;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1322,7 +1321,7 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++");
+			justifiedText = "012+++456++89";
 			forceToWidth = text.RuneCount + 3;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1334,7 +1333,7 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+++");
+			justifiedText = "012++++456+++89";
 			forceToWidth = text.RuneCount + 5;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1352,7 +1351,7 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++++++++++++");
+			justifiedText = "012+++++++++++++456++++++++++++89";
 			forceToWidth = text.RuneCount + 23;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1368,13 +1367,13 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+");
+			justifiedText = "012++456+89+end";
 			forceToWidth = text.RuneCount + 1;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+");
+			justifiedText = "012++456++89+end";
 			forceToWidth = text.RuneCount + 2;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1386,13 +1385,13 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++");
+			justifiedText = "012+++456++89++end";
 			forceToWidth = text.RuneCount + 4;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++");
+			justifiedText = "012+++456+++89++end";
 			forceToWidth = text.RuneCount + 5;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1404,13 +1403,13 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+++++++");
+			justifiedText = "012++++++++456++++++++89+++++++end";
 			forceToWidth = text.RuneCount + 20;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++++++++");
+			justifiedText = "012+++++++++456+++++++++89++++++++end";
 			forceToWidth = text.RuneCount + 23;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1427,7 +1426,7 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+");
+			justifiedText = "Ð¿ÑÐ++Ð²Ð+Ñ";
 			forceToWidth = text.RuneCount + 1;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1439,7 +1438,7 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++");
+			justifiedText = "Ð¿ÑÐ+++Ð²Ð++Ñ";
 			forceToWidth = text.RuneCount + 3;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1451,7 +1450,7 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+++");
+			justifiedText = "Ð¿ÑÐ++++Ð²Ð+++Ñ";
 			forceToWidth = text.RuneCount + 5;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1469,7 +1468,7 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++++++++++++");
+			justifiedText = "Ð¿ÑÐ+++++++++++++Ð²Ð++++++++++++Ñ";
 			forceToWidth = text.RuneCount + 23;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1486,13 +1485,13 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+");
+			justifiedText = "Ð++ÑÐ+Ð²Ð+Ñ";
 			forceToWidth = text.RuneCount + 1;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+");
+			justifiedText = "Ð++ÑÐ++Ð²Ð+Ñ";
 			forceToWidth = text.RuneCount + 2;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1504,13 +1503,13 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++");
+			justifiedText = "Ð+++ÑÐ++Ð²Ð++Ñ";
 			forceToWidth = text.RuneCount + 4;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++");
+			justifiedText = "Ð+++ÑÐ+++Ð²Ð++Ñ";
 			forceToWidth = text.RuneCount + 5;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -1522,13 +1521,13 @@ namespace Terminal.Gui.Core {
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "+++++++");
+			justifiedText = "Ð++++++++ÑÐ++++++++Ð²Ð+++++++Ñ";
 			forceToWidth = text.RuneCount + 20;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
 			Assert.True (Math.Abs (forceToWidth - justifiedText.ConsoleWidth) < text.Count (" "));
 
-			justifiedText = text.Replace (" ", "++++++++");
+			justifiedText = "Ð+++++++++ÑÐ+++++++++Ð²Ð++++++++Ñ";
 			forceToWidth = text.RuneCount + 23;
 			Assert.Equal (justifiedText.ToString (), TextFormatter.Justify (text, forceToWidth, fillChar).ToString ());
 			Assert.True (Math.Abs (forceToWidth - justifiedText.RuneCount) < text.Count (" "));
@@ -2191,7 +2190,7 @@ namespace Terminal.Gui.Core {
 └───┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, width + 2, height + 2), pos);
 		}
 
@@ -2230,7 +2229,7 @@ namespace Terminal.Gui.Core {
 └────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, width + 2, height + 2), pos);
 		}
 
@@ -2271,7 +2270,7 @@ namespace Terminal.Gui.Core {
 └──────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, width + 2, height + 2), pos);
 		}
 
@@ -2311,7 +2310,7 @@ namespace Terminal.Gui.Core {
 └────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, width + 2, height + 2), pos);
 		}
 
@@ -2425,38 +2424,38 @@ namespace Terminal.Gui.Core {
 			var tf = new TextFormatter ();
 			ustring text = "test";
 			int hotPos = 0;
-			uint tag = tf.HotKeyTagMask | 't';
+			uint tag = 't';
 
 			Assert.Equal (ustring.Make (new Rune [] { tag, 'e', 's', 't' }), tf.ReplaceHotKeyWithTag (text, hotPos));
 
-			tag = tf.HotKeyTagMask | 'e';
+			tag = 'e';
 			hotPos = 1;
 			Assert.Equal (ustring.Make (new Rune [] { 't', tag, 's', 't' }), tf.ReplaceHotKeyWithTag (text, hotPos));
 
 			var result = tf.ReplaceHotKeyWithTag (text, hotPos);
-			Assert.Equal ('e', (uint)(result.ToRunes () [1] & ~tf.HotKeyTagMask));
+			Assert.Equal ('e', (uint)(result.ToRunes () [1]));
 
 			text = "Ok";
-			tag = 0x100000 | 'O';
+			tag = 'O';
 			hotPos = 0;
 			Assert.Equal (ustring.Make (new Rune [] { tag, 'k' }), result = tf.ReplaceHotKeyWithTag (text, hotPos));
-			Assert.Equal ('O', (uint)(result.ToRunes () [0] & ~tf.HotKeyTagMask));
+			Assert.Equal ('O', (uint)(result.ToRunes () [0]));
 
 			text = "[◦ Ok ◦]";
 			text = ustring.Make (new Rune [] { '[', '◦', ' ', 'O', 'k', ' ', '◦', ']' });
 			var runes = text.ToRuneList ();
 			Assert.Equal (text.RuneCount, runes.Count);
 			Assert.Equal (text, ustring.Make (runes));
-			tag = tf.HotKeyTagMask | 'O';
+			tag = 'O';
 			hotPos = 3;
 			Assert.Equal (ustring.Make (new Rune [] { '[', '◦', ' ', tag, 'k', ' ', '◦', ']' }), result = tf.ReplaceHotKeyWithTag (text, hotPos));
-			Assert.Equal ('O', (uint)(result.ToRunes () [3] & ~tf.HotKeyTagMask));
+			Assert.Equal ('O', (uint)(result.ToRunes () [3]));
 
 			text = "^k";
 			tag = '^';
 			hotPos = 0;
 			Assert.Equal (ustring.Make (new Rune [] { tag, 'k' }), result = tf.ReplaceHotKeyWithTag (text, hotPos));
-			Assert.Equal ('^', (uint)(result.ToRunes () [0] & ~tf.HotKeyTagMask));
+			Assert.Equal ('^', (uint)(result.ToRunes () [0]));
 		}
 
 		[Fact]
@@ -2842,12 +2841,12 @@ namespace Terminal.Gui.Core {
 
 			c = new System.Rune (31);
 			Assert.Equal (-1, Rune.ColumnWidth (c));        // non printable character
-			Assert.Equal (-1, ustring.Make (c).ConsoleWidth);
+			Assert.Equal (0, ustring.Make (c).ConsoleWidth);// ConsoleWidth only returns zero or greater than zero
 			Assert.Equal (1, ustring.Make (c).Length);
 
 			c = new System.Rune (127);
 			Assert.Equal (-1, Rune.ColumnWidth (c));       // non printable character
-			Assert.Equal (-1, ustring.Make (c).ConsoleWidth);
+			Assert.Equal (0, ustring.Make (c).ConsoleWidth);
 			Assert.Equal (1, ustring.Make (c).Length);
 		}
 
@@ -2932,6 +2931,38 @@ namespace Terminal.Gui.Core {
 		{
 			var exception = Record.Exception (() => TextFormatter.Format ("Some text", 4, TextAlignment.Left, false, true));
 			Assert.Null (exception);
+		}
+
+
+
+		[Fact, AutoInitShutdown]
+		public void Format_Justified_Always_Returns_Text_Width_Equal_To_Passed_Width_Horizontal ()
+		{
+			ustring text = "Hello world, how are you today? Pretty neat!";
+
+			Assert.Equal (44, text.RuneCount);
+
+			for (int i = 44; i < 80; i++) {
+				var fmtText = TextFormatter.Format (text, i, TextAlignment.Justified, false, true) [0];
+				Assert.Equal (i, fmtText.RuneCount);
+				var c = (char)fmtText [^1];
+				Assert.Equal ('!', c);
+			}
+		}
+
+		[Fact, AutoInitShutdown]
+		public void Format_Justified_Always_Returns_Text_Width_Equal_To_Passed_Width_Vertical ()
+		{
+			ustring text = "Hello world, how are you today? Pretty neat!";
+
+			Assert.Equal (44, text.RuneCount);
+
+			for (int i = 44; i < 80; i++) {
+				var fmtText = TextFormatter.Format (text, i, TextAlignment.Justified, false, true, 0, TextDirection.TopBottom_LeftRight) [0];
+				Assert.Equal (i, fmtText.RuneCount);
+				var c = (char)fmtText [^1];
+				Assert.Equal ('!', c);
+			}
 		}
 
 		[Fact]
@@ -3028,7 +3059,7 @@ namespace Terminal.Gui.Core {
 Demo Simple Rune
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 16, 1), pos);
 		}
 
@@ -3065,7 +3096,7 @@ n
 e
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 1, 16), pos);
 		}
 
@@ -3083,7 +3114,7 @@ e
 デモエムポンズ
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 14, 1), pos);
 		}
 
@@ -3109,7 +3140,7 @@ e
 ズ
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 2, 7), pos);
 		}
 
@@ -3138,7 +3169,7 @@ e
 ズ
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 2, 7), pos);
 		}
 
@@ -3177,7 +3208,7 @@ e
 └────────────────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, width + 2, 6), pos);
 		}
 
@@ -3232,7 +3263,7 @@ e
 └───────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 9, height + 2), pos);
 		}
 
@@ -3271,7 +3302,7 @@ e
 └─────────────────────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, width + 2, 6), pos);
 		}
 
@@ -3330,8 +3361,50 @@ e
 └───────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 13, height + 2), pos);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void Draw_Fill_Remaining ()
+		{
+			var view = new View ("This view needs to be cleared before rewritten.");
+
+			var tf1 = new TextFormatter ();
+			tf1.Text = "This TextFormatter (tf1) without fill will not be cleared on rewritten.";
+			var tf1Size = tf1.Size;
+
+			var tf2 = new TextFormatter ();
+			tf2.Text = "This TextFormatter (tf2) with fill will be cleared on rewritten.";
+			var tf2Size = tf2.Size;
+
+			Application.Top.Add (view);
+			Application.Begin (Application.Top);
+
+			tf1.Draw (new Rect (new Point (0, 1), tf1Size), view.GetNormalColor (), view.ColorScheme.HotNormal, default, false);
+
+			tf2.Draw (new Rect (new Point (0, 2), tf2Size), view.GetNormalColor (), view.ColorScheme.HotNormal);
+
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+This view needs to be cleared before rewritten.                        
+This TextFormatter (tf1) without fill will not be cleared on rewritten.
+This TextFormatter (tf2) with fill will be cleared on rewritten.       
+", output);
+
+			view.Text = "This view is rewritten.";
+			view.Redraw (view.Bounds);
+
+			tf1.Text = "This TextFormatter (tf1) is rewritten.";
+			tf1.Draw (new Rect (new Point (0, 1), tf1Size), view.GetNormalColor (), view.ColorScheme.HotNormal, default, false);
+
+			tf2.Text = "This TextFormatter (tf2) is rewritten.";
+			tf2.Draw (new Rect (new Point (0, 2), tf2Size), view.GetNormalColor (), view.ColorScheme.HotNormal);
+
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+This view is rewritten.                                                
+This TextFormatter (tf1) is rewritten.will not be cleared on rewritten.
+This TextFormatter (tf2) is rewritten.                                 
+", output);
 		}
 
 		[Fact]
@@ -3429,7 +3502,7 @@ e
 └────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 
 			text = "0123456789";
@@ -3447,7 +3520,7 @@ e
 └────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 		}
 
@@ -3482,7 +3555,7 @@ e
 └────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 
 			text = "0123456789";
@@ -3501,7 +3574,7 @@ e
 └────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 		}
 
@@ -3537,7 +3610,7 @@ e
 └────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 
 			text = "0123456789";
@@ -3556,7 +3629,7 @@ e
 └────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 		}
 
@@ -3593,7 +3666,7 @@ e
 └────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 
 			text = "0123456789";
@@ -3612,7 +3685,7 @@ e
 └────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 		}
 
@@ -3647,7 +3720,7 @@ e
 └────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 
 			text = "0123456789";
@@ -3666,7 +3739,7 @@ e
 └────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 		}
 
@@ -3702,7 +3775,7 @@ e
 └────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 
 			text = "0123456789";
@@ -3721,7 +3794,7 @@ e
 └────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 10, 4), pos);
 		}
 
@@ -3764,7 +3837,7 @@ e
 └──┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 4, 10), pos);
 
 			text = "0123456789";
@@ -3789,7 +3862,7 @@ e
 └──┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 4, 10), pos);
 		}
 
@@ -3831,7 +3904,7 @@ e
 └──┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 4, 10), pos);
 
 			text = "0123456789";
@@ -3856,7 +3929,7 @@ e
 └──┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 4, 10), pos);
 		}
 
@@ -3899,7 +3972,7 @@ e
 └──┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 4, 10), pos);
 
 			text = "0123456789";
@@ -3924,7 +3997,7 @@ e
 └──┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 4, 10), pos);
 		}
 
@@ -3966,7 +4039,7 @@ e
 └──┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 4, 10), pos);
 
 			text = "0123456789";
@@ -3991,7 +4064,7 @@ e
 └──┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 4, 10), pos);
 		}
 
@@ -4011,6 +4084,180 @@ e
 			Assert.Equal ("Line1", formated [0]);
 			Assert.Equal ("Line2", formated [1]);
 			Assert.Equal ("Line3", formated [^1]);
+		}
+
+		[Fact]
+		public void SplitNewLine_Ending_Without_NewLine_Probably_CRLF ()
+		{
+			var text = $"First Line 界{Environment.NewLine}Second Line 界{Environment.NewLine}Third Line 界";
+			var splited = TextFormatter.SplitNewLine (text);
+			Assert.Equal ("First Line 界", splited [0]);
+			Assert.Equal ("Second Line 界", splited [1]);
+			Assert.Equal ("Third Line 界", splited [^1]);
+		}
+
+		[Fact]
+		public void SplitNewLine_Ending_With_NewLine_Probably_CRLF ()
+		{
+			var text = $"First Line 界{Environment.NewLine}Second Line 界{Environment.NewLine}Third Line 界{Environment.NewLine}";
+			var splited = TextFormatter.SplitNewLine (text);
+			Assert.Equal ("First Line 界", splited [0]);
+			Assert.Equal ("Second Line 界", splited [1]);
+			Assert.Equal ("Third Line 界", splited [2]);
+			Assert.Equal ("", splited [^1]);
+		}
+
+		[Fact]
+		public void SplitNewLine_Ending_Without_NewLine_Only_LF ()
+		{
+			var text = $"First Line 界\nSecond Line 界\nThird Line 界";
+			var splited = TextFormatter.SplitNewLine (text);
+			Assert.Equal ("First Line 界", splited [0]);
+			Assert.Equal ("Second Line 界", splited [1]);
+			Assert.Equal ("Third Line 界", splited [^1]);
+		}
+
+		[Fact]
+		public void SplitNewLine_Ending_With_NewLine_Only_LF ()
+		{
+			var text = $"First Line 界\nSecond Line 界\nThird Line 界\n";
+			var splited = TextFormatter.SplitNewLine (text);
+			Assert.Equal ("First Line 界", splited [0]);
+			Assert.Equal ("Second Line 界", splited [1]);
+			Assert.Equal ("Third Line 界", splited [2]);
+			Assert.Equal ("", splited [^1]);
+		}
+
+		[Fact]
+		public void MaxWidthLine_With_And_Without_Newlines ()
+		{
+			var text = "Single Line 界";
+			Assert.Equal (14, TextFormatter.MaxWidthLine (text));
+
+			text = $"First Line 界\nSecond Line 界\nThird Line 界\n";
+			Assert.Equal (14, TextFormatter.MaxWidthLine (text));
+		}
+
+		[Fact]
+		public void Ustring_Array_Is_Not_Equal_ToRunes_Array_And_String_Array ()
+		{
+			var text = "New Test 你";
+			ustring us = text;
+			string s = text;
+			Assert.Equal (10, us.RuneCount);
+			Assert.Equal (10, s.Length);
+			// The reason is ustring index is related to byte length and not rune length
+			Assert.Equal (12, us.Length);
+			Assert.NotEqual (20320, us [9]);
+			Assert.Equal (20320, s [9]);
+			Assert.Equal (228, us [9]);
+			Assert.Equal ("ä", ((Rune)us [9]).ToString ());
+			Assert.Equal ("你", s [9].ToString ());
+
+			// Rune array is equal to string array
+			var usToRunes = us.ToRunes ();
+			Assert.Equal (10, usToRunes.Length);
+			Assert.Equal (10, s.Length);
+			Assert.Equal (20320, (int)usToRunes [9]);
+			Assert.Equal (20320, s [9]);
+			Assert.Equal ("你", ((Rune)usToRunes [9]).ToString ());
+			Assert.Equal ("你", s [9].ToString ());
+		}
+
+		[Fact, AutoInitShutdown]
+		public void Non_Bmp_ConsoleWidth_ColumnWidth_Equal_Two ()
+		{
+			ustring us = "\U0001d539";
+			Rune r = 0x1d539;
+
+			Assert.Equal ("𝔹", us);
+			Assert.Equal ("𝔹", r.ToString ());
+			Assert.Equal (us, r.ToString ());
+
+			Assert.Equal (2, us.ConsoleWidth);
+			Assert.Equal (2, Rune.ColumnWidth (r));
+
+			var win = new Window (us);
+			var label = new Label (ustring.Make (r));
+			var tf = new TextField (us) { Y = 1, Width = 3 };
+			win.Add (label, tf);
+			var top = Application.Top;
+			top.Add (win);
+
+			Application.Begin (top);
+			((FakeDriver)Application.Driver).SetBufferSize (10, 4);
+
+			var expected = @"
+┌ 𝔹 ────┐
+│𝔹      │
+│𝔹      │
+└────────┘";
+			TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
+
+			TestHelpers.AssertDriverContentsAre (expected, output);
+
+			var expectedColors = new Attribute [] {
+				// 0
+				Colors.Base.Normal,
+				// 1
+				Colors.Base.Focus,
+				// 2
+				Colors.Base.HotNormal
+			};
+
+			TestHelpers.AssertDriverColorsAre (@"
+0222200000
+0000000000
+0111000000
+0000000000", expectedColors);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void CJK_Compatibility_Ideographs_ConsoleWidth_ColumnWidth_Equal_Two ()
+		{
+			ustring us = "\U0000f900";
+			Rune r = 0xf900;
+
+			Assert.Equal ("豈", us);
+			Assert.Equal ("豈", r.ToString ());
+			Assert.Equal (us, r.ToString ());
+
+			Assert.Equal (2, us.ConsoleWidth);
+			Assert.Equal (2, Rune.ColumnWidth (r));
+
+			var win = new Window (us);
+			var label = new Label (ustring.Make (r));
+			var tf = new TextField (us) { Y = 1, Width = 3 };
+			win.Add (label, tf);
+			var top = Application.Top;
+			top.Add (win);
+
+			Application.Begin (top);
+			((FakeDriver)Application.Driver).SetBufferSize (10, 4);
+
+			var expected = @"
+┌ 豈 ────┐
+│豈      │
+│豈      │
+└────────┘";
+			TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
+
+			TestHelpers.AssertDriverContentsAre (expected, output);
+
+			var expectedColors = new Attribute [] {
+				// 0
+				Colors.Base.Normal,
+				// 1
+				Colors.Base.Focus,
+				// 2
+				Colors.Base.HotNormal
+			};
+
+			TestHelpers.AssertDriverColorsAre (@"
+0222200000
+0000000000
+0111000000
+0000000000", expectedColors);
 		}
 	}
 }

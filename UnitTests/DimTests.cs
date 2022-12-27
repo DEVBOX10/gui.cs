@@ -1002,7 +1002,7 @@ namespace Terminal.Gui.Core {
 			field.KeyDown += (k) => {
 				if (k.KeyEvent.Key == Key.Enter) {
 					((FakeDriver)Application.Driver).SetBufferSize (22, count + 4);
-					var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expecteds [count], output);
+					var pos = TestHelpers.AssertDriverContentsWithFrameAre (expecteds [count], output);
 					Assert.Equal (new Rect (0, 0, 22, count + 4), pos);
 
 					if (count < 20) {
@@ -1148,7 +1148,7 @@ namespace Terminal.Gui.Core {
 			field.KeyDown += (k) => {
 				if (k.KeyEvent.Key == Key.Enter) {
 					((FakeDriver)Application.Driver).SetBufferSize (22, count + 4);
-					var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expecteds [count], output);
+					var pos = TestHelpers.AssertDriverContentsWithFrameAre (expecteds [count], output);
 					Assert.Equal (new Rect (0, 0, 22, count + 4), pos);
 
 					if (count > 0) {
@@ -1245,6 +1245,43 @@ namespace Terminal.Gui.Core {
 			f2 = () => 1;
 			dim2 = Dim.Function (f2);
 			Assert.NotEqual (dim1, dim2);
+		}
+
+		[Theory, AutoInitShutdown]
+		[InlineData (0, true)]
+		[InlineData (0, false)]
+		[InlineData (50, true)]
+		[InlineData (50, false)]
+
+		public void DimPercentPlusOne (int startingDistance, bool testHorizontal)
+		{
+			var container = new View {
+				Width = 100,
+				Height = 100,
+			};
+
+			var label = new Label {
+				X = testHorizontal ? startingDistance : 0,
+				Y = testHorizontal ? 0 : startingDistance,
+				Width = testHorizontal ? Dim.Percent (50) + 1 : 1,
+				Height = testHorizontal ? 1 : Dim.Percent (50) + 1,
+			};
+
+			container.Add (label);
+			Application.Top.Add (container);
+			Application.Top.LayoutSubviews ();
+
+
+			Assert.Equal (100, container.Frame.Width);
+			Assert.Equal (100, container.Frame.Height);
+
+			if (testHorizontal) {
+				Assert.Equal (51, label.Frame.Width);
+				Assert.Equal (1, label.Frame.Height);
+			} else {
+				Assert.Equal (1, label.Frame.Width);
+				Assert.Equal (51, label.Frame.Height);
+			}
 		}
 	}
 }

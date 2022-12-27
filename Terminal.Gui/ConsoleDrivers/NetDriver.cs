@@ -533,6 +533,7 @@ namespace Terminal.Gui {
 			int foundPoint = 0;
 			string value = "";
 			var kChar = GetKeyCharArray (cki);
+			//System.Diagnostics.Debug.WriteLine ($"kChar: {new string (kChar)}");
 			for (int i = 0; i < kChar.Length; i++) {
 				var c = kChar [i];
 				if (c == '<') {
@@ -559,6 +560,8 @@ namespace Terminal.Gui {
 					//} else if (c == 'm') {
 					//	isButtonPressed = false;
 					//}
+
+					//System.Diagnostics.Debug.WriteLine ($"buttonCode: {buttonCode}");
 
 					switch (buttonCode) {
 					case 0:
@@ -1309,6 +1312,11 @@ namespace Terminal.Gui {
 			}
 		}
 
+		public override Attribute MakeColor (Color foreground, Color background)
+		{
+			return MakeColor ((ConsoleColor)foreground, (ConsoleColor)background);
+		}
+
 		static Attribute MakeColor (ConsoleColor f, ConsoleColor b)
 		{
 			// Encode the colors into the int value.
@@ -1337,46 +1345,7 @@ namespace Terminal.Gui {
 
 			StartReportingMouseMoves ();
 
-			Colors.TopLevel = new ColorScheme ();
-			Colors.Base = new ColorScheme ();
-			Colors.Dialog = new ColorScheme ();
-			Colors.Menu = new ColorScheme ();
-			Colors.Error = new ColorScheme ();
-
-			Colors.TopLevel.Normal = MakeColor (ConsoleColor.Green, ConsoleColor.Black);
-			Colors.TopLevel.Focus = MakeColor (ConsoleColor.White, ConsoleColor.DarkCyan);
-			Colors.TopLevel.HotNormal = MakeColor (ConsoleColor.DarkYellow, ConsoleColor.Black);
-			Colors.TopLevel.HotFocus = MakeColor (ConsoleColor.DarkBlue, ConsoleColor.DarkCyan);
-			Colors.TopLevel.Disabled = MakeColor (ConsoleColor.DarkGray, ConsoleColor.Black);
-
-			Colors.Base.Normal = MakeColor (ConsoleColor.White, ConsoleColor.DarkBlue);
-			Colors.Base.Focus = MakeColor (ConsoleColor.Black, ConsoleColor.Gray);
-			Colors.Base.HotNormal = MakeColor (ConsoleColor.Cyan, ConsoleColor.DarkBlue);
-			Colors.Base.HotFocus = MakeColor (ConsoleColor.Blue, ConsoleColor.Gray);
-			Colors.Base.Disabled = MakeColor (ConsoleColor.DarkGray, ConsoleColor.DarkBlue);
-
-			// Focused,
-			//    Selected, Hot: Yellow on Black
-			//    Selected, text: white on black
-			//    Unselected, hot: yellow on cyan
-			//    unselected, text: same as unfocused
-			Colors.Menu.Normal = MakeColor (ConsoleColor.White, ConsoleColor.DarkGray);
-			Colors.Menu.Focus = MakeColor (ConsoleColor.White, ConsoleColor.Black);
-			Colors.Menu.HotNormal = MakeColor (ConsoleColor.Yellow, ConsoleColor.DarkGray);
-			Colors.Menu.HotFocus = MakeColor (ConsoleColor.Yellow, ConsoleColor.Black);
-			Colors.Menu.Disabled = MakeColor (ConsoleColor.Gray, ConsoleColor.DarkGray);
-
-			Colors.Dialog.Normal = MakeColor (ConsoleColor.Black, ConsoleColor.Gray);
-			Colors.Dialog.Focus = MakeColor (ConsoleColor.White, ConsoleColor.DarkGray);
-			Colors.Dialog.HotNormal = MakeColor (ConsoleColor.DarkBlue, ConsoleColor.Gray);
-			Colors.Dialog.HotFocus = MakeColor (ConsoleColor.DarkBlue, ConsoleColor.DarkGray);
-			Colors.Dialog.Disabled = MakeColor (ConsoleColor.DarkGray, ConsoleColor.Gray);
-
-			Colors.Error.Normal = MakeColor (ConsoleColor.DarkRed, ConsoleColor.White);
-			Colors.Error.Focus = MakeColor (ConsoleColor.White, ConsoleColor.DarkRed);
-			Colors.Error.HotNormal = MakeColor (ConsoleColor.Black, ConsoleColor.White);
-			Colors.Error.HotFocus = MakeColor (ConsoleColor.Black, ConsoleColor.DarkRed);
-			Colors.Error.Disabled = MakeColor (ConsoleColor.DarkGray, ConsoleColor.White);
+			CreateColors ();
 
 			Clear ();
 		}
@@ -1514,7 +1483,13 @@ namespace Terminal.Gui {
 							output.Append (WriteAttributes (attr));
 						}
 						outputWidth++;
-						output.Append ((char)contents [row, col, 0]);
+						var rune = contents [row, col, 0];
+						char [] spair;
+						if (Rune.DecodeSurrogatePair((uint) rune, out spair)) {
+							output.Append (spair);
+						} else {
+							output.Append ((char)rune);
+						}
 						contents [row, col, 2] = 0;
 					}
 				}
@@ -1644,6 +1619,22 @@ namespace Terminal.Gui {
 			currentAttribute = c;
 		}
 
+		public ConsoleKeyInfo FromVKPacketToKConsoleKeyInfo (ConsoleKeyInfo consoleKeyInfo)
+		{
+			if (consoleKeyInfo.Key != ConsoleKey.Packet) {
+				return consoleKeyInfo;
+			}
+
+			var mod = consoleKeyInfo.Modifiers;
+			var shift = (mod & ConsoleModifiers.Shift) != 0;
+			var alt = (mod & ConsoleModifiers.Alt) != 0;
+			var control = (mod & ConsoleModifiers.Control) != 0;
+
+			var keyChar = ConsoleKeyMapping.GetKeyCharFromConsoleKey (consoleKeyInfo.KeyChar, consoleKeyInfo.Modifiers, out uint virtualKey, out _);
+
+			return new ConsoleKeyInfo ((char)keyChar, (ConsoleKey)virtualKey, shift, alt, control);
+		}
+
 		Key MapKey (ConsoleKeyInfo keyInfo)
 		{
 			MapKeyModifiers (keyInfo, (Key)keyInfo.Key);
@@ -1721,7 +1712,7 @@ namespace Terminal.Gui {
 					return (Key)(((uint)Key.CtrlMask) | ((uint)Key.D0 + delta));
 				}
 				if ((keyInfo.Modifiers & (ConsoleModifiers.Alt | ConsoleModifiers.Control)) != 0) {
-					if (keyInfo.KeyChar == 0 || keyInfo.KeyChar == 30) {
+					if (keyInfo.KeyChar == 0 || keyInfo.KeyChar == 30 || keyInfo.KeyChar == ((uint)Key.D0 + delta)) {
 						return MapKeyModifiers (keyInfo, (Key)((uint)Key.D0 + delta));
 					}
 				}
@@ -1788,14 +1779,23 @@ namespace Terminal.Gui {
 		{
 			switch (inputEvent.EventType) {
 			case NetEvents.EventType.Key:
+				ConsoleKeyInfo consoleKeyInfo = inputEvent.ConsoleKeyInfo;
+				if (consoleKeyInfo.Key == ConsoleKey.Packet) {
+					consoleKeyInfo = FromVKPacketToKConsoleKeyInfo (consoleKeyInfo);
+				}
 				keyModifiers = new KeyModifiers ();
-				var map = MapKey (inputEvent.ConsoleKeyInfo);
+				var map = MapKey (consoleKeyInfo);
 				if (map == (Key)0xffffffff) {
 					return;
 				}
-				keyDownHandler (new KeyEvent (map, keyModifiers));
-				keyHandler (new KeyEvent (map, keyModifiers));
-				keyUpHandler (new KeyEvent (map, keyModifiers));
+				if (map == Key.Null) {
+					keyDownHandler (new KeyEvent (map, keyModifiers));
+					keyUpHandler (new KeyEvent (map, keyModifiers));
+				} else {
+					keyDownHandler (new KeyEvent (map, keyModifiers));
+					keyHandler (new KeyEvent (map, keyModifiers));
+					keyUpHandler (new KeyEvent (map, keyModifiers));
+				}
 				break;
 			case NetEvents.EventType.Mouse:
 				mouseHandler (ToDriverMouse (inputEvent.MouseEvent));
@@ -1838,6 +1838,8 @@ namespace Terminal.Gui {
 
 		MouseEvent ToDriverMouse (NetEvents.MouseEvent me)
 		{
+			//System.Diagnostics.Debug.WriteLine ($"X: {me.Position.X}; Y: {me.Position.Y}; ButtonState: {me.ButtonState}");
+
 			MouseFlags mouseFlag = 0;
 
 			if ((me.ButtonState & NetEvents.MouseButtonState.Button1Pressed) != 0) {
@@ -1969,14 +1971,8 @@ namespace Terminal.Gui {
 		public override void SendKeys (char keyChar, ConsoleKey key, bool shift, bool alt, bool control)
 		{
 			NetEvents.InputResult input = new NetEvents.InputResult ();
-			ConsoleKey ck;
-			if (char.IsLetter (keyChar)) {
-				ck = key;
-			} else {
-				ck = (ConsoleKey)'\0';
-			}
 			input.EventType = NetEvents.EventType.Key;
-			input.ConsoleKeyInfo = new ConsoleKeyInfo (keyChar, ck, shift, alt, control);
+			input.ConsoleKeyInfo = new ConsoleKeyInfo (keyChar, key, shift, alt, control);
 
 			try {
 				ProcessInput (input);

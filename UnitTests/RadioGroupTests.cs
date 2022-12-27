@@ -99,7 +99,7 @@ namespace Terminal.Gui.Views {
 └────────────────────────────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 30, 5), pos);
 
 			rg.DisplayMode = DisplayModeLayout.Horizontal;
@@ -120,7 +120,7 @@ namespace Terminal.Gui.Views {
 └────────────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 30, 5), pos);
 
 			rg.HorizontalSpace = 4;
@@ -140,7 +140,7 @@ namespace Terminal.Gui.Views {
 └────────────────────────────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 0, 30, 5), pos);
 		}
 
@@ -170,6 +170,21 @@ namespace Terminal.Gui.Views {
 			Assert.True (rg.ProcessKey (new KeyEvent (Key.Home, new KeyModifiers ())));
 			Assert.True (rg.ProcessKey (new KeyEvent (Key.End, new KeyModifiers ())));
 			Assert.True (rg.ProcessKey (new KeyEvent (Key.Space, new KeyModifiers ())));
+			Assert.Equal (1, rg.SelectedItem);
+		}
+
+		[Fact]
+		public void ProcessColdKey_HotKey ()
+		{
+			var rg = new RadioGroup (new NStack.ustring [] { "Left", "Right", "Cen_tered", "Justified" });
+
+			Assert.True (rg.ProcessColdKey (new KeyEvent (Key.t, new KeyModifiers ())));
+			Assert.Equal (2, rg.SelectedItem);
+			Assert.True (rg.ProcessColdKey (new KeyEvent (Key.L, new KeyModifiers ())));
+			Assert.Equal (0, rg.SelectedItem);
+			Assert.True (rg.ProcessColdKey (new KeyEvent (Key.J, new KeyModifiers ())));
+			Assert.Equal (3, rg.SelectedItem);
+			Assert.True (rg.ProcessColdKey (new KeyEvent (Key.R, new KeyModifiers ())));
 			Assert.Equal (1, rg.SelectedItem);
 		}
 	}

@@ -164,7 +164,7 @@ namespace Terminal.Gui.Core {
 └──────────────────────────────────────┘
 ";
 
-			GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 		}
 
 		[Fact]
@@ -211,7 +211,7 @@ namespace Terminal.Gui.Core {
 └──────────────────────────────────────┘
 ";
 
-			GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 		}
 
 		[Fact]
@@ -247,7 +247,7 @@ namespace Terminal.Gui.Core {
 				win.Frame.Right, win.Frame.Bottom));
 			Assert.Equal (new Rect (0, 20, 78, 1), label.Frame);
 			var expected = @"
-  Menu                                                                          
+ Menu                                                                           
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                                                                              │
 │                                                                              │
@@ -274,7 +274,7 @@ namespace Terminal.Gui.Core {
  F1 Help                                                                        
 ";
 
-			GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 		}
 
 		[Fact]
@@ -310,7 +310,7 @@ namespace Terminal.Gui.Core {
 				win.Frame.Right, win.Frame.Bottom));
 			Assert.Equal (new Rect (0, 20, 78, 1), label.Frame);
 			var expected = @"
-  Menu                                                                          
+ Menu                                                                           
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                                                                              │
 │                                                                              │
@@ -337,7 +337,7 @@ namespace Terminal.Gui.Core {
  F1 Help                                                                        
 ";
 
-			GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 		}
 
 		[Fact]
@@ -1031,6 +1031,41 @@ namespace Terminal.Gui.Core {
 			f2 = () => 1;
 			pos2 = Pos.Function (f2);
 			Assert.NotEqual (pos1, pos2);
+		}
+
+		[Theory, AutoInitShutdown]
+		[InlineData (true)]
+		[InlineData (false)]
+
+		public void PosPercentPlusOne (bool testHorizontal)
+		{
+			var container = new View {
+				Width = 100,
+				Height = 100,
+			};
+
+			var label = new Label {
+				X = testHorizontal ? Pos.Percent (50) + Pos.Percent (10) + 1 : 1,
+				Y = testHorizontal ? 1 : Pos.Percent (50) + Pos.Percent (10) + 1,
+				Width = 10,
+				Height = 10,
+			};
+
+			container.Add (label);
+			Application.Top.Add (container);
+			Application.Top.LayoutSubviews ();
+
+
+			Assert.Equal (100, container.Frame.Width);
+			Assert.Equal (100, container.Frame.Height);
+
+			if (testHorizontal) {
+				Assert.Equal (61, label.Frame.X);
+				Assert.Equal (1, label.Frame.Y);
+			} else {
+				Assert.Equal (1, label.Frame.X);
+				Assert.Equal (61, label.Frame.Y);
+			}
 		}
 	}
 }

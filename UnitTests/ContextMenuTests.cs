@@ -72,7 +72,7 @@ namespace Terminal.Gui.Core {
           └──────┘
 ";
 
-			GraphViewTests.AssertDriverContentsAre (expected, output);
+			TestHelpers.AssertDriverContentsAre (expected, output);
 
 			cm.Hide ();
 			Assert.False (ContextMenu.IsShow);
@@ -81,7 +81,7 @@ namespace Terminal.Gui.Core {
 
 			expected = "";
 
-			GraphViewTests.AssertDriverContentsAre (expected, output);
+			TestHelpers.AssertDriverContentsAre (expected, output);
 		}
 
 		[Fact]
@@ -105,7 +105,7 @@ namespace Terminal.Gui.Core {
           └──────┘
 ";
 
-			GraphViewTests.AssertDriverContentsAre (expected, output);
+			TestHelpers.AssertDriverContentsAre (expected, output);
 
 			cm.Position = new Point (5, 10);
 
@@ -119,7 +119,7 @@ namespace Terminal.Gui.Core {
      └──────┘
 ";
 
-			GraphViewTests.AssertDriverContentsAre (expected, output);
+			TestHelpers.AssertDriverContentsAre (expected, output);
 
 		}
 
@@ -144,7 +144,7 @@ namespace Terminal.Gui.Core {
           └──────┘
 ";
 
-			GraphViewTests.AssertDriverContentsAre (expected, output);
+			TestHelpers.AssertDriverContentsAre (expected, output);
 
 			cm.MenuItems = new MenuBarItem (new MenuItem [] {
 				new MenuItem ("First", "", null),
@@ -164,7 +164,7 @@ namespace Terminal.Gui.Core {
           └─────────┘
 ";
 
-			GraphViewTests.AssertDriverContentsAre (expected, output);
+			TestHelpers.AssertDriverContentsAre (expected, output);
 
 		}
 
@@ -271,7 +271,7 @@ namespace Terminal.Gui.Core {
                                                                         └──────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (72, 21, 80, 4), pos);
 
 			cm.Hide ();
@@ -312,7 +312,7 @@ namespace Terminal.Gui.Core {
                                                                       View    
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (70, 20, 78, 5), pos);
 
 			cm.Hide ();
@@ -347,7 +347,7 @@ namespace Terminal.Gui.Core {
           └──────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (10, 5, 18, 5), pos);
 
 			cm.Hide ();
@@ -370,7 +370,7 @@ namespace Terminal.Gui.Core {
      └──────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (5, 10, 13, 7), pos);
 
 			cm.Hide ();
@@ -401,7 +401,7 @@ namespace Terminal.Gui.Core {
 └────
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 1, 5, 4), pos);
 
 			cm.Hide ();
@@ -423,7 +423,7 @@ namespace Terminal.Gui.Core {
 			cm.Show ();
 			Assert.Equal (new Point (0, 0), cm.Position);
 			Application.Begin (Application.Top);
-			((FakeDriver)Application.Driver).SetBufferSize (80, 4);
+			((FakeDriver)Application.Driver).SetBufferSize (80, 3);
 
 			var expected = @"
 ┌──────┐
@@ -431,8 +431,8 @@ namespace Terminal.Gui.Core {
 │ Two  │
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
-			Assert.Equal (new Rect (0, 1, 8, 3), pos);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
+			Assert.Equal (new Rect (0, 0, 8, 3), pos);
 
 			cm.Hide ();
 			Assert.Equal (new Point (0, 0), cm.Position);
@@ -484,7 +484,7 @@ namespace Terminal.Gui.Core {
 └──────┘
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (0, 1, 8, 4), pos);
 
 			cm.ForceMinimumPosToZero = false;
@@ -498,7 +498,7 @@ namespace Terminal.Gui.Core {
 ──────┘
 ";
 
-			pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
+			pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
 			Assert.Equal (new Rect (1, 0, 7, 3), pos);
 		}
 
@@ -519,38 +519,38 @@ namespace Terminal.Gui.Core {
 
 			Application.Top.Add (menu);
 
-			Assert.Null (Application.mouseGrabView);
+			Assert.Null (Application.MouseGrabView);
 
 			cm.Show ();
 			Assert.True (ContextMenu.IsShow);
-			Assert.Equal (cm.MenuBar, Application.mouseGrabView);
+			Assert.Equal (cm.MenuBar, Application.MouseGrabView);
 			Assert.False (menu.IsMenuOpen);
 			Assert.True (menu.ProcessHotKey (new KeyEvent (Key.F9, new KeyModifiers ())));
 			Assert.False (ContextMenu.IsShow);
-			Assert.Equal (menu, Application.mouseGrabView);
+			Assert.Equal (menu, Application.MouseGrabView);
 			Assert.True (menu.IsMenuOpen);
 
 			cm.Show ();
 			Assert.True (ContextMenu.IsShow);
-			Assert.Equal (cm.MenuBar, Application.mouseGrabView);
+			Assert.Equal (cm.MenuBar, Application.MouseGrabView);
 			Assert.False (menu.IsMenuOpen);
 			Assert.False (menu.OnKeyDown (new KeyEvent (Key.Null, new KeyModifiers () { Alt = true })));
 			Assert.True (menu.OnKeyUp (new KeyEvent (Key.Null, new KeyModifiers () { Alt = true })));
 			Assert.False (ContextMenu.IsShow);
-			Assert.Equal (menu, Application.mouseGrabView);
+			Assert.Equal (menu, Application.MouseGrabView);
 			Assert.True (menu.IsMenuOpen);
 
 			cm.Show ();
 			Assert.True (ContextMenu.IsShow);
-			Assert.Equal (cm.MenuBar, Application.mouseGrabView);
+			Assert.Equal (cm.MenuBar, Application.MouseGrabView);
 			Assert.False (menu.IsMenuOpen);
 			Assert.False (menu.MouseEvent (new MouseEvent () { X = 1, Flags = MouseFlags.ReportMousePosition, View = menu }));
 			Assert.True (ContextMenu.IsShow);
-			Assert.Equal (cm.MenuBar, Application.mouseGrabView);
+			Assert.Equal (cm.MenuBar, Application.MouseGrabView);
 			Assert.False (menu.IsMenuOpen);
 			Assert.True (menu.MouseEvent (new MouseEvent () { X = 1, Flags = MouseFlags.Button1Clicked, View = menu }));
 			Assert.False (ContextMenu.IsShow);
-			Assert.Equal (menu, Application.mouseGrabView);
+			Assert.Equal (menu, Application.MouseGrabView);
 			Assert.True (menu.IsMenuOpen);
 		}
 
@@ -592,27 +592,27 @@ namespace Terminal.Gui.Core {
 			Assert.Equal (new Point (9, 3), tf.ContextMenu.Position);
 			Application.Top.Redraw (Application.Top.Bounds);
 			var expected = @"
-  File   Edit                         
-                                      
-                                      
-  Label: TextField                    
-         ┌───────────────────────────┐
-         │ Select All         Ctrl+T │
-         │ Delete All   Ctrl+Shift+D │
-         │ Copy               Ctrl+C │
-         │ Cut                Ctrl+X │
-         │ Paste              Ctrl+V │
-         │ Undo               Ctrl+Z │
-         │ Redo               Ctrl+Y │
-         └───────────────────────────┘
-                                      
-                                      
-                                      
- F1 Help │ ^Q Quit                    
+ File  Edit                     
+                                
+                                
+  Label: TextField              
+         ┌─────────────────────┐
+         │ Select All   Ctrl+T │
+         │ Delete All   Ctrl+R │
+         │ Copy         Ctrl+C │
+         │ Cut          Ctrl+X │
+         │ Paste        Ctrl+V │
+         │ Undo         Ctrl+Z │
+         │ Redo         Ctrl+Y │
+         └─────────────────────┘
+                                
+                                
+                                
+ F1 Help │ ^Q Quit              
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
-			Assert.Equal (new Rect (2, 0, 38, 17), pos);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
+			Assert.Equal (new Rect (1, 0, 32, 17), pos);
 		}
 
 		[Fact, AutoInitShutdown]
@@ -648,7 +648,6 @@ namespace Terminal.Gui.Core {
 			Application.Begin (Application.Top);
 			((FakeDriver)Application.Driver).SetBufferSize (44, 17);
 
-
 			Assert.Equal (new Rect (9, 3, 20, 1), tf.Frame);
 			Assert.True (tf.HasFocus);
 
@@ -657,27 +656,251 @@ namespace Terminal.Gui.Core {
 			Assert.Equal (new Point (10, 5), tf.ContextMenu.Position);
 			Application.Top.Redraw (Application.Top.Bounds);
 			var expected = @"
-  File   Edit                               
+ File  Edit                                 
 ┌ Window ──────────────────────────────────┐
 │                                          │
 │                                          │
 │                                          │
 │  Label: TextField                        │
-│         ┌───────────────────────────┐    │
-│         │ Select All         Ctrl+T │    │
-│         │ Delete All   Ctrl+Shift+D │    │
-│         │ Copy               Ctrl+C │    │
-│         │ Cut                Ctrl+X │    │
-│         │ Paste              Ctrl+V │    │
-│         │ Undo               Ctrl+Z │    │
-│         │ Redo               Ctrl+Y │    │
-│         └───────────────────────────┘    │
+│         ┌─────────────────────┐          │
+│         │ Select All   Ctrl+T │          │
+│         │ Delete All   Ctrl+R │          │
+│         │ Copy         Ctrl+C │          │
+│         │ Cut          Ctrl+X │          │
+│         │ Paste        Ctrl+V │          │
+│         │ Undo         Ctrl+Z │          │
+│         │ Redo         Ctrl+Y │          │
+│         └─────────────────────┘          │
 └──────────────────────────────────────────┘
  F1 Help │ ^Q Quit                          
 ";
 
-			var pos = GraphViewTests.AssertDriverContentsWithFrameAre (expected, output);
-			Assert.Equal (new Rect (2, 0, 44, 17), pos);
+			var pos = TestHelpers.AssertDriverContentsWithFrameAre (expected, output);
+			Assert.Equal (new Rect (1, 0, 44, 17), pos);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void Menus_And_SubMenus_Always_Try_To_Be_On_Screen ()
+		{
+			var cm = new ContextMenu (-1, -2,
+				new MenuBarItem (new MenuItem [] {
+					new MenuItem ("One", "", null),
+					new MenuItem ("Two", "", null),
+					new MenuItem ("Three", "", null),
+					new MenuBarItem ("Four", new MenuItem [] {
+						new MenuItem ("SubMenu1", "", null),
+						new MenuItem ("SubMenu2", "", null),
+						new MenuItem ("SubMenu3", "", null),
+						new MenuItem ("SubMenu4", "", null),
+						new MenuItem ("SubMenu5", "", null),
+						new MenuItem ("SubMenu6", "", null),
+						new MenuItem ("SubMenu7", "", null)
+					}),
+					new MenuItem ("Five", "", null),
+					new MenuItem ("Six", "", null)
+				})
+			);
+
+			Assert.Equal (new Point (-1, -2), cm.Position);
+
+			cm.Show ();
+			Assert.Equal (new Point (-1, -2), cm.Position);
+			var top = Application.Top;
+			Application.Begin (top);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+┌────────┐
+│ One    │
+│ Two    │
+│ Three  │
+│ Four  ►│
+│ Five   │
+│ Six    │
+└────────┘
+", output);
+
+			Assert.True (top.Subviews [0].MouseEvent (new MouseEvent {
+				X = 0,
+				Y = 4,
+				Flags = MouseFlags.ReportMousePosition,
+				View = top.Subviews [0]
+			}));
+			Application.Refresh ();
+			Assert.Equal (new Point (-1, -2), cm.Position);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+┌────────┐             
+│ One    │             
+│ Two    │             
+│ Three  │             
+│ Four  ►│┌───────────┐
+│ Five   ││ SubMenu1  │
+│ Six    ││ SubMenu2  │
+└────────┘│ SubMenu3  │
+          │ SubMenu4  │
+          │ SubMenu5  │
+          │ SubMenu6  │
+          │ SubMenu7  │
+          └───────────┘
+", output);
+
+			((FakeDriver)Application.Driver).SetBufferSize (40, 20);
+			cm.Position = new Point (41, -2);
+			cm.Show ();
+			Application.Refresh ();
+			Assert.Equal (new Point (41, -2), cm.Position);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+                              ┌────────┐
+                              │ One    │
+                              │ Two    │
+                              │ Three  │
+                              │ Four  ►│
+                              │ Five   │
+                              │ Six    │
+                              └────────┘
+", output);
+
+			Assert.True (top.Subviews [0].MouseEvent (new MouseEvent {
+				X = 30,
+				Y = 4,
+				Flags = MouseFlags.ReportMousePosition,
+				View = top.Subviews [0]
+			}));
+			Application.Refresh ();
+			Assert.Equal (new Point (41, -2), cm.Position);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+                              ┌────────┐
+                              │ One    │
+                              │ Two    │
+                              │ Three  │
+                 ┌───────────┐│ Four  ►│
+                 │ SubMenu1  ││ Five   │
+                 │ SubMenu2  ││ Six    │
+                 │ SubMenu3  │└────────┘
+                 │ SubMenu4  │          
+                 │ SubMenu5  │          
+                 │ SubMenu6  │          
+                 │ SubMenu7  │          
+                 └───────────┘          
+", output);
+
+			cm.Position = new Point (41, 9);
+			cm.Show ();
+			Application.Refresh ();
+			Assert.Equal (new Point (41, 9), cm.Position);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+                              ┌────────┐
+                              │ One    │
+                              │ Two    │
+                              │ Three  │
+                              │ Four  ►│
+                              │ Five   │
+                              │ Six    │
+                              └────────┘
+", output);
+
+			Assert.True (top.Subviews [0].MouseEvent (new MouseEvent {
+				X = 30,
+				Y = 4,
+				Flags = MouseFlags.ReportMousePosition,
+				View = top.Subviews [0]
+			}));
+			Application.Refresh ();
+			Assert.Equal (new Point (41, 9), cm.Position);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+                              ┌────────┐
+                 ┌───────────┐│ One    │
+                 │ SubMenu1  ││ Two    │
+                 │ SubMenu2  ││ Three  │
+                 │ SubMenu3  ││ Four  ►│
+                 │ SubMenu4  ││ Five   │
+                 │ SubMenu5  ││ Six    │
+                 │ SubMenu6  │└────────┘
+                 │ SubMenu7  │          
+                 └───────────┘          
+", output);
+
+			cm.Position = new Point (41, 22);
+			cm.Show ();
+			Application.Refresh ();
+			Assert.Equal (new Point (41, 22), cm.Position);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+                              ┌────────┐
+                              │ One    │
+                              │ Two    │
+                              │ Three  │
+                              │ Four  ►│
+                              │ Five   │
+                              │ Six    │
+                              └────────┘
+", output);
+
+			Assert.True (top.Subviews [0].MouseEvent (new MouseEvent {
+				X = 30,
+				Y = 4,
+				Flags = MouseFlags.ReportMousePosition,
+				View = top.Subviews [0]
+			}));
+			Application.Refresh ();
+			Assert.Equal (new Point (41, 22), cm.Position);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+                 ┌───────────┐          
+                 │ SubMenu1  │┌────────┐
+                 │ SubMenu2  ││ One    │
+                 │ SubMenu3  ││ Two    │
+                 │ SubMenu4  ││ Three  │
+                 │ SubMenu5  ││ Four  ►│
+                 │ SubMenu6  ││ Five   │
+                 │ SubMenu7  ││ Six    │
+                 └───────────┘└────────┘
+", output);
+
+			((FakeDriver)Application.Driver).SetBufferSize (18, 8);
+			cm.Position = new Point (19, 10);
+			cm.Show ();
+			Application.Refresh ();
+			Assert.Equal (new Point (19, 10), cm.Position);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+        ┌────────┐
+        │ One    │
+        │ Two    │
+        │ Three  │
+        │ Four  ►│
+        │ Five   │
+        │ Six    │
+        └────────┘
+", output);
+
+			Assert.True (top.Subviews [0].MouseEvent (new MouseEvent {
+				X = 30,
+				Y = 4,
+				Flags = MouseFlags.ReportMousePosition,
+				View = top.Subviews [0]
+			}));
+			Application.Refresh ();
+			Assert.Equal (new Point (19, 10), cm.Position);
+			TestHelpers.AssertDriverContentsWithFrameAre (@"
+┌───────────┐────┐
+│ SubMenu1  │    │
+│ SubMenu2  │    │
+│ SubMenu3  │ee  │
+│ SubMenu4  │r  ►│
+│ SubMenu5  │e   │
+│ SubMenu6  │    │
+│ SubMenu7  │────┘
+", output);
+		}
+
+		[Fact, AutoInitShutdown]
+		public void Key_Open_And_Close_The_ContextMenu ()
+		{
+			var tf = new TextField ();
+			var top = Application.Top;
+			top.Add (tf);
+			Application.Begin (top);
+
+			Assert.True (tf.ProcessKey (new KeyEvent (Key.F10 | Key.ShiftMask, new KeyModifiers ())));
+			Assert.True (tf.ContextMenu.MenuBar.IsMenuOpen);
+			Assert.True (top.Subviews [1].ProcessKey (new KeyEvent (Key.F10 | Key.ShiftMask, new KeyModifiers ())));
+			Assert.Null (tf.ContextMenu.MenuBar);
 		}
 	}
 }

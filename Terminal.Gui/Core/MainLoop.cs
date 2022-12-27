@@ -6,6 +6,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Terminal.Gui {
 	/// <summary>
@@ -61,6 +62,11 @@ namespace Terminal.Gui {
 
 		internal SortedList<long, Timeout> timeouts = new SortedList<long, Timeout> ();
 		object timeoutsLockToken = new object ();
+
+		/// <summary>
+		/// The idle handlers and lock that must be held while manipulating them
+		/// </summary>
+		object idleHandlersLock = new object ();
 		internal List<Func<bool>> idleHandlers = new List<Func<bool>> ();
 
 		/// <summary>
@@ -71,9 +77,15 @@ namespace Terminal.Gui {
 		public SortedList<long, Timeout> Timeouts => timeouts;
 
 		/// <summary>
-		/// Gets the list of all idle handlers.
+		/// Gets a copy of the list of all idle handlers.
 		/// </summary>
-		public List<Func<bool>> IdleHandlers => idleHandlers;
+		public ReadOnlyCollection<Func<bool>> IdleHandlers {
+			get {
+				lock (idleHandlersLock) {
+					return new List<Func<bool>> (idleHandlers).AsReadOnly ();
+				}
+			}
+		}
 
 		/// <summary>
 		/// The current IMainLoopDriver in use.
@@ -82,8 +94,8 @@ namespace Terminal.Gui {
 		public IMainLoopDriver Driver { get; }
 
 		/// <summary>
-		/// Invoked when a new timeout is added to be used on the case
-		/// if <see cref="Application.ExitRunLoopAfterFirstIteration"/> is true,
+		/// Invoked when a new timeout is added. To be used in the case
+		/// when <see cref="Application.ExitRunLoopAfterFirstIteration"/> is <see langword="true"/>.
 		/// </summary>
 		public event Action<long> TimeoutAdded;
 
@@ -123,7 +135,7 @@ namespace Terminal.Gui {
 		/// <param name="idleHandler">Token that can be used to remove the idle handler with <see cref="RemoveIdle(Func{bool})"/> .</param>
 		public Func<bool> AddIdle (Func<bool> idleHandler)
 		{
-			lock (idleHandlers) {
+			lock (idleHandlersLock) {
 				idleHandlers.Add (idleHandler);
 			}
 
@@ -139,7 +151,7 @@ namespace Terminal.Gui {
 		///  This method also returns <c>false</c> if the idle handler is not found.
 		public bool RemoveIdle (Func<bool> token)
 		{
-			lock (token)
+			lock (idleHandlersLock)
 				return idleHandlers.Remove (token);
 		}
 
@@ -242,14 +254,14 @@ namespace Terminal.Gui {
 		void RunIdle ()
 		{
 			List<Func<bool>> iterate;
-			lock (idleHandlers) {
+			lock (idleHandlersLock) {
 				iterate = idleHandlers;
 				idleHandlers = new List<Func<bool>> ();
 			}
 
 			foreach (var idle in iterate) {
 				if (idle ())
-					lock (idleHandlers)
+					lock (idleHandlersLock)
 						idleHandlers.Add (idle);
 			}
 		}
@@ -294,9 +306,12 @@ namespace Terminal.Gui {
 
 			Driver.MainIteration ();
 
-			lock (idleHandlers) {
-				if (idleHandlers.Count > 0)
-					RunIdle ();
+			bool runIdle = false;
+			lock (idleHandlersLock) {
+				runIdle = idleHandlers.Count > 0;
+			}
+			if (runIdle) {
+				RunIdle ();
 			}
 		}
 
