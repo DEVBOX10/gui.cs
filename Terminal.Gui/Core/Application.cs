@@ -57,7 +57,7 @@ namespace Terminal.Gui {
 	///   </para>
 	/// </remarks>
 	public static class Application {
-		static Stack<Toplevel> toplevels = new Stack<Toplevel> ();
+		static readonly Stack<Toplevel> toplevels = new Stack<Toplevel> ();
 
 		/// <summary>
 		/// The current <see cref="ConsoleDriver"/> in use.
@@ -69,16 +69,15 @@ namespace Terminal.Gui {
 		/// </summary>
 		public static List<Toplevel> MdiChildes {
 			get {
+				List<Toplevel> mdiChildes = new List<Toplevel> ();
 				if (MdiTop != null) {
-					List<Toplevel> mdiChildes = new List<Toplevel> ();
 					foreach (var top in toplevels) {
 						if (top != MdiTop && !top.Modal) {
 							mdiChildes.Add (top);
 						}
 					}
-					return mdiChildes;
 				}
-				return null;
+				return mdiChildes;
 			}
 		}
 
@@ -112,27 +111,36 @@ namespace Terminal.Gui {
 		public static View WantContinuousButtonPressedView { get; private set; }
 
 		/// <summary>
-		/// The current <see cref="ConsoleDriver.HeightAsBuffer"/> used in the terminal.
+		/// The current <see cref="ConsoleDriver.EnableConsoleScrolling"/> used in the terminal.
 		/// </summary>
-		public static bool HeightAsBuffer {
-			get {
-				if (Driver == null) {
-					throw new ArgumentNullException ("The driver must be initialized first.");
-				}
-				return Driver.HeightAsBuffer;
-			}
-			set {
-				if (Driver == null) {
-					throw new ArgumentNullException ("The driver must be initialized first.");
-				}
-				Driver.HeightAsBuffer = value;
-			}
-		}
+		/// <remarks>
+		/// <para>
+		/// If <see langword="false"/> (the default) the height of the Terminal.Gui application (<see cref="ConsoleDriver.Rows"/>) 
+		/// tracks to the height of the visible console view when the console is resized. In this case 
+		/// scrolling in the console will be disabled and all <see cref="ConsoleDriver.Rows"/> will remain visible.
+		/// </para>
+		/// <para>
+		/// If <see langword="true"/> then height of the Terminal.Gui application <see cref="ConsoleDriver.Rows"/> only tracks 
+		/// the height of the visible console view when the console is made larger (the application will only grow in height, never shrink). 
+		/// In this case console scrolling is enabled and the contents (<see cref="ConsoleDriver.Rows"/> high) will scroll
+		/// as the console scrolls. 
+		/// </para>
+		/// <para>This API is deprecated and has no impact when enabled.</para>
+		/// <para>This API was previously named 'HeightAsBuffer` but was renamed to make its purpose more clear.</para>
+		/// </remarks>
+		[Obsolete ("This API is deprecated and has no impact when enabled.", false)]
+		public static bool EnableConsoleScrolling { get; set; }
+
+		/// <summary>
+		/// This API is deprecated; use <see cref="EnableConsoleScrolling"/> instead.
+		/// </summary>
+		[Obsolete ("This API is deprecated and has no impact when enabled.", false)]
+		public static bool HeightAsBuffer { get; set; }
 
 		static Key alternateForwardKey = Key.PageDown | Key.CtrlMask;
 
 		/// <summary>
-		/// Alternative key to navigate forwards through all views. Ctrl+Tab is always used.
+		/// Alternative key to navigate forwards through views. Ctrl+Tab is the primary key.
 		/// </summary>
 		public static Key AlternateForwardKey {
 			get => alternateForwardKey;
@@ -147,7 +155,7 @@ namespace Terminal.Gui {
 
 		static void OnAlternateForwardKeyChanged (Key oldKey)
 		{
-			foreach (var top in toplevels) {
+			foreach (var top in toplevels.ToArray ()) {
 				top.OnAlternateForwardKeyChanged (oldKey);
 			}
 		}
@@ -155,7 +163,7 @@ namespace Terminal.Gui {
 		static Key alternateBackwardKey = Key.PageUp | Key.CtrlMask;
 
 		/// <summary>
-		/// Alternative key to navigate backwards through all views. Shift+Ctrl+Tab is always used.
+		/// Alternative key to navigate backwards through views. Shift+Ctrl+Tab is the primary key.
 		/// </summary>
 		public static Key AlternateBackwardKey {
 			get => alternateBackwardKey;
@@ -170,7 +178,7 @@ namespace Terminal.Gui {
 
 		static void OnAlternateBackwardKeyChanged (Key oldKey)
 		{
-			foreach (var top in toplevels) {
+			foreach (var top in toplevels.ToArray ()) {
 				top.OnAlternateBackwardKeyChanged (oldKey);
 			}
 		}
@@ -200,7 +208,8 @@ namespace Terminal.Gui {
 
 		static void OnQuitKeyChanged (Key oldKey)
 		{
-			foreach (var top in toplevels) {
+			// Duplicate the list so if it changes during enumeration we're safe
+			foreach (var top in toplevels.ToArray ()) {
 				top.OnQuitKeyChanged (oldKey);
 			}
 		}
@@ -212,7 +221,7 @@ namespace Terminal.Gui {
 		public static MainLoop MainLoop { get; private set; }
 
 		/// <summary>
-		/// Disable or enable the mouse in this <see cref="Application"/>
+		/// Disable or enable the mouse. The mouse is enabled by default.
 		/// </summary>
 		public static bool IsMouseDisabled { get; set; }
 
@@ -266,7 +275,7 @@ namespace Terminal.Gui {
 		// users use async/await on their code
 		//
 		class MainLoopSyncContext : SynchronizationContext {
-			MainLoop mainLoop;
+			readonly MainLoop mainLoop;
 
 			public MainLoopSyncContext (MainLoop mainLoop)
 			{
@@ -305,9 +314,9 @@ namespace Terminal.Gui {
 		}
 
 		/// <summary>
-		/// If set, it forces the use of the System.Console-based driver.
+		/// If <see langword="true"/>, forces the use of the System.Console-based (see <see cref="NetDriver"/>) driver. The default is <see langword="false"/>.
 		/// </summary>
-		public static bool UseSystemConsole;
+		public static bool UseSystemConsole { get; set; } = false;
 
 		// For Unit testing - ignores UseSystemConsole
 		internal static bool ForceFakeConsole;
@@ -375,14 +384,14 @@ namespace Terminal.Gui {
 				ResetState ();
 			}
 
-			// FakeDriver (for UnitTests)
+			// For UnitTests
 			if (driver != null) {
-				if (mainLoopDriver == null) {
-					throw new ArgumentNullException ("InternalInit mainLoopDriver cannot be null if driver is provided.");
-				}
-				if (!(driver is FakeDriver)) {
-					throw new InvalidOperationException ("InternalInit can only be called with FakeDriver.");
-				}
+				//if (mainLoopDriver == null) {
+				//	throw new ArgumentNullException ("InternalInit mainLoopDriver cannot be null if driver is provided.");
+				//}
+				//if (!(driver is FakeDriver)) {
+				//	throw new InvalidOperationException ("InternalInit can only be called with FakeDriver.");
+				//}
 				Driver = driver;
 			}
 
@@ -391,18 +400,34 @@ namespace Terminal.Gui {
 				if (ForceFakeConsole) {
 					// For Unit Testing only
 					Driver = new FakeDriver ();
-					mainLoopDriver = new FakeMainLoop (() => FakeConsole.ReadKey (true));
 				} else if (UseSystemConsole) {
 					Driver = new NetDriver ();
-					mainLoopDriver = new NetMainLoop (Driver);
 				} else if (p == PlatformID.Win32NT || p == PlatformID.Win32S || p == PlatformID.Win32Windows) {
 					Driver = new WindowsDriver ();
-					mainLoopDriver = new WindowsMainLoop (Driver);
 				} else {
-					mainLoopDriver = new UnixMainLoop ();
 					Driver = new CursesDriver ();
 				}
+				if (Driver == null) {
+					throw new InvalidOperationException ("Init could not determine the ConsoleDriver to use.");
+				}
 			}
+
+			if (mainLoopDriver == null) {
+				// TODO: Move this logic into ConsoleDriver
+				if (Driver is FakeDriver) {
+					mainLoopDriver = new FakeMainLoop (Driver);
+				} else if (Driver is NetDriver) {
+					mainLoopDriver = new NetMainLoop (Driver);
+				} else if (Driver is WindowsDriver) {
+					mainLoopDriver = new WindowsMainLoop (Driver);
+				} else if (Driver is CursesDriver) {
+					mainLoopDriver = new UnixMainLoop (Driver);
+				}
+				if (mainLoopDriver == null) {
+					throw new InvalidOperationException ("Init could not determine the MainLoopDriver to use.");
+				}
+			}
+
 			MainLoop = new MainLoop (mainLoopDriver);
 
 			try {
@@ -508,8 +533,10 @@ namespace Terminal.Gui {
 
 			var chain = toplevels.ToList ();
 			foreach (var topLevel in chain) {
-				if (topLevel.ProcessHotKey (ke))
+				if (topLevel.ProcessHotKey (ke)) {
+					EnsuresMdiTopOnFrontIfMdiTopMostFocused ();
 					return;
+				}
 				if (topLevel.Modal)
 					break;
 			}
@@ -740,6 +767,7 @@ namespace Terminal.Gui {
 				return;
 			}
 
+			EnsuresMdiTopOnFrontIfMdiTopMostFocused ();
 			var view = FindDeepestView (Current, me.X, me.Y, out int rx, out int ry);
 
 			if (view != null && view.WantContinuousButtonPressed)
@@ -778,13 +806,15 @@ namespace Terminal.Gui {
 				}
 			}
 
-			if ((view == null || view == MdiTop) && !Current.Modal && MdiTop != null
+			if ((view == null || view == MdiTop || view.SuperView == MdiTop) && !Current.Modal && MdiTop != null
 				&& me.Flags != MouseFlags.ReportMousePosition && me.Flags != 0) {
 
 				var top = FindDeepestTop (Top, me.X, me.Y, out _, out _);
 				view = FindDeepestView (top, me.X, me.Y, out rx, out ry);
 
-				if (view != null && view != MdiTop && top != Current) {
+				if (view != null && view != MdiTop && top != Current && top.MostFocused != null
+					&& top.MostFocused.GetType ().Name != "ContentView") {
+
 					MoveCurrent ((Toplevel)top);
 				}
 			}
@@ -817,9 +847,20 @@ namespace Terminal.Gui {
 					WantContinuousButtonPressedView = null;
 
 				// Should we bubbled up the event, if it is not handled?
-				view.OnMouseEvent (nme);
+				if (view.OnMouseEvent (nme)) {
+					EnsuresMdiTopOnFrontIfMdiTopMostFocused ();
+				}
 
 				EnsuresTopOnFront ();
+			}
+		}
+
+		static void EnsuresMdiTopOnFrontIfMdiTopMostFocused ()
+		{
+			if (MdiTop != null && Current != MdiTop && MdiTop.MostFocused != null
+				&& MdiTop.MostFocused.GetType ().Name != "ContentView") {
+
+				MoveCurrent (Top);
 			}
 		}
 
@@ -917,6 +958,8 @@ namespace Terminal.Gui {
 				if (Top != null && toplevel != Top && !toplevels.Contains (Top)) {
 					Top.Dispose ();
 					Top = null;
+				} else if (Top != null && toplevel != Top && toplevels.Contains (Top)) {
+					Top.OnLeave (toplevel);
 				}
 				if (string.IsNullOrEmpty (toplevel.Id.ToString ())) {
 					var count = 1;
@@ -970,9 +1013,7 @@ namespace Terminal.Gui {
 			toplevel.PositionToplevels ();
 			toplevel.WillPresent ();
 			if (refreshDriver) {
-				if (MdiTop != null) {
-					MdiTop.OnChildLoaded (toplevel);
-				}
+				MdiTop?.OnChildLoaded (toplevel);
 				toplevel.OnLoaded ();
 				Redraw (toplevel);
 				toplevel.PositionCursor ();
@@ -1027,6 +1068,8 @@ namespace Terminal.Gui {
 					MdiTop.OnAllChildClosed ();
 				} else {
 					SetCurrentAsTop ();
+					runState.Toplevel.OnLeave (Current);
+					Current.OnEnter (runState.Toplevel);
 				}
 				Refresh ();
 			}
@@ -1090,12 +1133,6 @@ namespace Terminal.Gui {
 
 
 		static void Redraw (View view)
-		{
-			view.Redraw (view.Bounds);
-			Driver.Refresh ();
-		}
-
-		static void Refresh (View view)
 		{
 			view.Redraw (view.Bounds);
 			Driver.Refresh ();
@@ -1166,8 +1203,12 @@ namespace Terminal.Gui {
 				Iteration?.Invoke ();
 
 				EnsureModalOrVisibleAlwaysOnTop (state.Toplevel);
+				if (!EnsuresNotModalNotRunningAndNotCurrent (state.Toplevel)) {
+					EnsuresMdiChildOnFrontIfMdiTopNotMostFocused ();
+				}
 				if ((state.Toplevel != Current && Current?.Modal == true)
 					|| (state.Toplevel != Current && Current?.Modal == false)) {
+
 					MdiTop?.OnDeactivate (state.Toplevel);
 					state.Toplevel = Current;
 					MdiTop?.OnActivate (state.Toplevel);
@@ -1195,18 +1236,42 @@ namespace Terminal.Gui {
 			}
 			if (!state.Toplevel.NeedDisplay.IsEmpty || state.Toplevel.ChildNeedsDisplay || state.Toplevel.LayoutNeeded
 				|| MdiChildNeedsDisplay ()) {
-				state.Toplevel.Redraw (state.Toplevel.Bounds);
-				if (DebugDrawBounds) {
-					DrawBounds (state.Toplevel);
-				}
-				state.Toplevel.PositionCursor ();
-				Driver.Refresh ();
+
+				bool isTopNeedsDisplay;
+				do {
+					state.Toplevel.Redraw (state.Toplevel.Bounds);
+					if (DebugDrawBounds) {
+						DrawBounds (state.Toplevel);
+					}
+					state.Toplevel.PositionCursor ();
+					Driver.Refresh ();
+					isTopNeedsDisplay = IsTopNeedsDisplay (state.Toplevel);
+					if (isTopNeedsDisplay) {
+						Top.Redraw (Top.Bounds);
+						state.Toplevel.SetNeedsDisplay ();
+					}
+				} while (isTopNeedsDisplay);
 			} else {
 				Driver.UpdateCursor ();
 			}
-			if (state.Toplevel != Top && !state.Toplevel.Modal
-				&& (!Top.NeedDisplay.IsEmpty || Top.ChildNeedsDisplay || Top.LayoutNeeded)) {
-				Top.Redraw (Top.Bounds);
+
+			bool IsTopNeedsDisplay (Toplevel toplevel)
+			{
+				if (toplevel != Top && !toplevel.Modal
+					&& (!Top.NeedDisplay.IsEmpty || Top.ChildNeedsDisplay || Top.LayoutNeeded)) {
+
+					return true;
+				}
+				return false;
+			}
+		}
+
+		static void EnsuresMdiChildOnFrontIfMdiTopNotMostFocused ()
+		{
+			if (MdiTop != null && Current == MdiTop && (MdiTop.MostFocused == null
+				|| MdiTop.MostFocused.GetType ().Name == "ContentView")) {
+
+				MoveNext ();
 			}
 		}
 
@@ -1225,6 +1290,22 @@ namespace Terminal.Gui {
 			if (!toplevel.Visible && toplevel == Current) {
 				MoveNext ();
 			}
+		}
+
+		static bool EnsuresNotModalNotRunningAndNotCurrent (Toplevel curRunStateTop)
+		{
+			if (MdiTop == null || !curRunStateTop.Running) {
+				return false;
+			}
+
+			foreach (var top in toplevels) {
+				if (!top.IsMdiContainer && top?.Running == false && top != Current && top?.Modal == false) {
+					MoveCurrent (top);
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		static bool MdiChildNeedsDisplay ()
@@ -1564,6 +1645,10 @@ namespace Terminal.Gui {
 
 		internal static bool ShowChild (Toplevel top)
 		{
+			if (Current == top) {
+				return false;
+			}
+
 			if (top.Visible && MdiTop != null && Current?.Modal == false) {
 				lock (toplevels) {
 					toplevels.MoveTo (top, 0, new ToplevelEqualityComparer ());

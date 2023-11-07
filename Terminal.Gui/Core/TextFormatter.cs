@@ -1176,22 +1176,35 @@ namespace Terminal.Gui {
 			}
 
 			var isVertical = IsVerticalDirection (textDirection);
-			var savedClip = Application.Driver?.Clip;
-			var maxBounds = bounds;
-			if (Application.Driver != null) {
-				Application.Driver.Clip = maxBounds = containerBounds == default
-					? bounds
-					: new Rect (Math.Max (containerBounds.X, bounds.X),
+			var maxBounds = containerBounds == default
+				? bounds
+				: new Rect (Math.Max (containerBounds.X, bounds.X),
 					Math.Max (containerBounds.Y, bounds.Y),
-					Math.Max (Math.Min (containerBounds.Width, containerBounds.Right - bounds.Left), 0),
-					Math.Max (Math.Min (containerBounds.Height, containerBounds.Bottom - bounds.Top), 0));
-			}
+					Math.Max (Math.Max (containerBounds.Width, containerBounds.Right - bounds.Left), 0),
+					Math.Max (Math.Max (containerBounds.Height, containerBounds.Bottom - bounds.Top), 0));
 
+			int boundsStart = 0;
+			if (isVertical) {
+				if (bounds.X < 0) {
+					boundsStart = bounds.X;
+				}
+			} else {
+				if (bounds.Y < 0) {
+					boundsStart = bounds.Y;
+				}
+			}
 			for (int line = 0; line < linesFormated.Count; line++) {
-				if ((isVertical && line > bounds.Width) || (!isVertical && line > bounds.Height))
+				if (boundsStart < 0) {
+					boundsStart++;
 					continue;
-				if ((isVertical && line > maxBounds.Left + maxBounds.Width - bounds.X) || (!isVertical && line > maxBounds.Top + maxBounds.Height - bounds.Y))
+				}
+				if ((isVertical && line > bounds.Width) || (!isVertical && line > bounds.Height)) {
+					continue;
+				}
+				if ((isVertical && line >= maxBounds.Left + maxBounds.Width)
+					|| (!isVertical && line >= maxBounds.Top + maxBounds.Height)) {
 					break;
+				}
 
 				var runes = lines [line].ToRunes ();
 
@@ -1212,11 +1225,11 @@ namespace Terminal.Gui {
 					if (isVertical) {
 						var runesWidth = GetSumMaxCharWidth (Lines, line);
 						x = bounds.Right - runesWidth;
-						CursorPosition = bounds.Width - runesWidth + hotKeyPos;
+						CursorPosition = bounds.Width - runesWidth + (hotKeyPos > -1 ? hotKeyPos : 0);
 					} else {
 						var runesWidth = GetTextWidth (ustring.Make (runes));
 						x = bounds.Right - runesWidth;
-						CursorPosition = bounds.Width - runesWidth + hotKeyPos;
+						CursorPosition = bounds.Width - runesWidth + (hotKeyPos > -1 ? hotKeyPos : 0);
 					}
 				} else if (textAlignment == TextAlignment.Left || textAlignment == TextAlignment.Justified) {
 					if (isVertical) {
@@ -1225,16 +1238,16 @@ namespace Terminal.Gui {
 					} else {
 						x = bounds.Left;
 					}
-					CursorPosition = hotKeyPos;
+					CursorPosition = hotKeyPos > -1 ? hotKeyPos : 0;
 				} else if (textAlignment == TextAlignment.Centered) {
 					if (isVertical) {
 						var runesWidth = GetSumMaxCharWidth (Lines, line);
 						x = bounds.Left + line + ((bounds.Width - runesWidth) / 2);
-						CursorPosition = (bounds.Width - runesWidth) / 2 + hotKeyPos;
+						CursorPosition = (bounds.Width - runesWidth) / 2 + (hotKeyPos > -1 ? hotKeyPos : 0);
 					} else {
 						var runesWidth = GetTextWidth (ustring.Make (runes));
 						x = bounds.Left + (bounds.Width - runesWidth) / 2;
-						CursorPosition = (bounds.Width - runesWidth) / 2 + hotKeyPos;
+						CursorPosition = (bounds.Width - runesWidth) / 2 + (hotKeyPos > -1 ? hotKeyPos : 0);
 					}
 				} else {
 					throw new ArgumentOutOfRangeException ();
@@ -1276,8 +1289,9 @@ namespace Terminal.Gui {
 					} else if (!fillRemaining && idx > runes.Length - 1) {
 						break;
 					}
-					if ((!isVertical && idx > maxBounds.Left + maxBounds.Width - bounds.X) || (isVertical && idx > maxBounds.Top + maxBounds.Height - bounds.Y))
+					if ((!isVertical && idx >= maxBounds.Left + maxBounds.Width - bounds.X) || (isVertical && idx >= maxBounds.Top + maxBounds.Height - bounds.Y)) {
 						break;
+					}
 
 					var rune = (Rune)' ';
 					if (isVertical) {
@@ -1291,7 +1305,7 @@ namespace Terminal.Gui {
 							rune = runes [idx];
 						}
 					}
-					if (idx == HotKeyPos) {
+					if (HotKeyPos > -1 && idx == HotKeyPos) {
 						if ((isVertical && textVerticalAlignment == VerticalTextAlignment.Justified) ||
 						(!isVertical && textAlignment == TextAlignment.Justified)) {
 							CursorPosition = idx - start;
@@ -1314,8 +1328,6 @@ namespace Terminal.Gui {
 					}
 				}
 			}
-			if (Application.Driver != null)
-				Application.Driver.Clip = (Rect)savedClip;
 		}
 	}
 }

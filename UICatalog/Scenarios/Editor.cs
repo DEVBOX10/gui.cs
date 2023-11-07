@@ -57,12 +57,6 @@ namespace UICatalog.Scenarios {
 
 			CreateDemoFile (_fileName);
 
-			var siCursorPosition = new StatusItem (Key.Null, "", null);
-
-			_textView.UnwrappedCursorPosition += (e) => {
-				siCursorPosition.Title = $"Ln {e.Y + 1}, Col {e.X + 1}";
-			};
-
 			LoadFile ();
 
 			Win.Add (_textView);
@@ -116,6 +110,8 @@ namespace UICatalog.Scenarios {
 
 			Application.Top.Add (menu);
 
+			var siCursorPosition = new StatusItem (Key.Null, "", null);
+
 			var statusBar = new StatusBar (new StatusItem [] {
 				siCursorPosition,
 				new StatusItem(Key.F2, "~F2~ Open", () => Open()),
@@ -124,6 +120,12 @@ namespace UICatalog.Scenarios {
 				new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit()),
 				new StatusItem(Key.Null, $"OS Clipboard IsSupported : {Clipboard.IsSupported}", null)
 			});
+
+			_textView.UnwrappedCursorPosition += (e) => {
+				siCursorPosition.Title = $"Ln {e.Y + 1}, Col {e.X + 1}";
+				statusBar.SetNeedsDisplay ();
+			};
+
 			Application.Top.Add (statusBar);
 
 			_scrollBar = new ScrollBarView (_textView, true);
@@ -343,7 +345,7 @@ namespace UICatalog.Scenarios {
 		private bool CanCloseFile ()
 		{
 			if (_textView.Text == _originalText) {
-				System.Diagnostics.Debug.Assert (!_textView.IsDirty);
+				//System.Diagnostics.Debug.Assert (!_textView.IsDirty);
 				return true;
 			}
 

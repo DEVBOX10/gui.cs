@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Terminal.Gui;
+using Microsoft.DotNet.PlatformAbstractions;
 using Rune = System.Rune;
 
 /// <summary>
@@ -72,6 +72,7 @@ namespace UICatalog {
 				_selectedScenario.Init (_colorScheme);
 				_selectedScenario.Setup ();
 				_selectedScenario.Run ();
+				_selectedScenario.Dispose ();
 				_selectedScenario = null;
 				Application.Shutdown ();
 				return;
@@ -95,6 +96,7 @@ namespace UICatalog {
 				scenario.Init (_colorScheme);
 				scenario.Setup ();
 				scenario.Run ();
+				scenario.Dispose ();
 
 				// This call to Application.Shutdown brackets the Application.Init call
 				// made by Scenario.Init() above
@@ -118,6 +120,7 @@ namespace UICatalog {
 			// Run UI Catalog UI. When it exits, if _selectedScenario is != null then
 			// a Scenario was selected. Otherwise, the user wants to exit UI Catalog.
 			Application.Init ();
+			
 			Application.Run<UICatalogTopLevel> ();
 			Application.Shutdown ();
 
@@ -139,7 +142,6 @@ namespace UICatalog {
 
 		static bool _useSystemConsole = false;
 		static ConsoleDriver.DiagnosticFlags _diagnosticFlags;
-		static bool _heightAsBuffer = false;
 		static bool _isFirstRunning = true;
 		static ColorScheme _colorScheme;
 
@@ -149,7 +151,6 @@ namespace UICatalog {
 		/// </summary>
 		class UICatalogTopLevel : Toplevel {
 			public MenuItem miIsMouseDisabled;
-			public MenuItem miHeightAsBuffer;
 
 			public FrameView LeftPane;
 			public ListView CategoryListView;
@@ -160,10 +161,11 @@ namespace UICatalog {
 			public StatusItem Numlock;
 			public StatusItem Scrolllock;
 			public StatusItem DriverName;
+			public StatusItem OS;
 
 			public UICatalogTopLevel ()
 			{
-				ColorScheme = _colorScheme;
+				ColorScheme = _colorScheme = Colors.Base;
 				MenuBar = new MenuBar (new MenuBarItem [] {
 					new MenuBarItem ("_File", new MenuItem [] {
 						new MenuItem ("_Quit", "Quit UI Catalog", () => RequestStop(), null, null, Key.Q | Key.CtrlMask)
@@ -182,14 +184,12 @@ namespace UICatalog {
 				Numlock = new StatusItem (Key.CharMask, "Num", null);
 				Scrolllock = new StatusItem (Key.CharMask, "Scroll", null);
 				DriverName = new StatusItem (Key.CharMask, "Driver:", null);
+				OS = new StatusItem (Key.CharMask, "OS:", null);
 
 				StatusBar = new StatusBar () {
 					Visible = true,
 				};
 				StatusBar.Items = new StatusItem [] {
-					Capslock,
-					Numlock,
-					Scrolllock,
 					new StatusItem(Key.Q | Key.CtrlMask, "~CTRL-Q~ Quit", () => {
 						if (_selectedScenario is null){
 							// This causes GetScenarioToRun to return null
@@ -199,7 +199,7 @@ namespace UICatalog {
 							_selectedScenario.RequestStop();
 						}
 					}),
-					new StatusItem(Key.F10, "~F10~ Hide/Show Status Bar", () => {
+					new StatusItem(Key.F10, "~F10~ Status Bar", () => {
 						StatusBar.Visible = !StatusBar.Visible;
 						LeftPane.Height = Dim.Fill(StatusBar.Visible ? 1 : 0);
 						RightPane.Height = Dim.Fill(StatusBar.Visible ? 1 : 0);
@@ -207,6 +207,7 @@ namespace UICatalog {
 						SetChildNeedsDisplay();
 					}),
 					DriverName,
+					OS
 				};
 
 				LeftPane = new FrameView ("Categories") {
@@ -272,15 +273,13 @@ namespace UICatalog {
 
 			void LoadedHandler ()
 			{
-				Application.HeightAsBuffer = _heightAsBuffer;
-
 				if (_colorScheme == null) {
 					ColorScheme = _colorScheme = Colors.Base;
 				}
 
 				miIsMouseDisabled.Checked = Application.IsMouseDisabled;
-				miHeightAsBuffer.Checked = Application.HeightAsBuffer;
 				DriverName.Title = $"Driver: {Driver.GetType ().Name}";
+				OS.Title = $"OS: {Microsoft.DotNet.PlatformAbstractions.RuntimeEnvironment.OperatingSystem} {Microsoft.DotNet.PlatformAbstractions.RuntimeEnvironment.OperatingSystemVersion}";
 
 				if (_selectedScenario != null) {
 					_selectedScenario = null;
@@ -315,7 +314,6 @@ namespace UICatalog {
 				List<MenuItem []> menuItems = new List<MenuItem []> ();
 				menuItems.Add (CreateDiagnosticFlagsMenuItems ());
 				menuItems.Add (new MenuItem [] { null });
-				menuItems.Add (CreateHeightAsBufferMenuItems ());
 				menuItems.Add (CreateDisabledEnabledMouseItems ());
 				menuItems.Add (CreateKeybindingsMenuItems ());
 				return menuItems;
@@ -349,22 +347,6 @@ namespace UICatalog {
 
 				menuItems.Add (null);
 				menuItems.Add (item);
-
-				return menuItems.ToArray ();
-			}
-
-			MenuItem [] CreateHeightAsBufferMenuItems ()
-			{
-				List<MenuItem> menuItems = new List<MenuItem> ();
-				miHeightAsBuffer = new MenuItem ();
-				miHeightAsBuffer.Title = "_Height As Buffer";
-				miHeightAsBuffer.Shortcut = Key.CtrlMask | Key.AltMask | (Key)miHeightAsBuffer.Title.ToString ().Substring (1, 1) [0];
-				miHeightAsBuffer.CheckType |= MenuItemCheckStyle.Checked;
-				miHeightAsBuffer.Action += () => {
-					miHeightAsBuffer.Checked = !miHeightAsBuffer.Checked;
-					Application.HeightAsBuffer = miHeightAsBuffer.Checked;
-				};
-				menuItems.Add (miHeightAsBuffer);
 
 				return menuItems.ToArray ();
 			}

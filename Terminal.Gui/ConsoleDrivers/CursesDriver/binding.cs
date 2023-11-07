@@ -43,6 +43,7 @@
 //
 using System;
 using System.Runtime.InteropServices;
+using Terminal.Gui;
 
 namespace Unix.Terminal {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
@@ -83,8 +84,25 @@ namespace Unix.Terminal {
 		static void LoadMethods ()
 		{
 			var libs = UnmanagedLibrary.IsMacOSPlatform ? new string [] { "libncurses.dylib" } : new string [] { "libncursesw.so.6", "libncursesw.so.5" };
-			curses_library = new UnmanagedLibrary (libs, false);
-			methods = new NativeMethods (curses_library);
+			var attempts = 1;
+			while (true) {
+				try {
+					curses_library = new UnmanagedLibrary (libs, false);
+					methods = new NativeMethods (curses_library);
+					break;
+				} catch (Exception ex) {
+
+					if (attempts == 1) {
+						attempts++;
+						var (exitCode, result) = ClipboardProcessRunner.Bash ("cat /etc/os-release", waitForOutput: true);
+						if (exitCode == 0 && result.Contains ("opensuse")) {
+							libs [0] = "libncursesw.so.5";
+						}
+					} else {
+						throw ex.GetBaseException ();
+					}
+				}
+			}
 		}
 
 		static void FindNCurses ()
@@ -142,14 +160,12 @@ namespace Unix.Terminal {
 
 			console_sharp_get_dims (out l, out c);
 
-			if (l == 1 || l != lines || c != cols) {
+			if (l < 1) {
+				l = 1;
+			}
+			if (l != lines || c != cols) {
 				lines = l;
 				cols = c;
-				//if (l <= 0 || c <= 0) {
-				//	Console.Out.Write ($"\x1b[8;50;{c}t");
-				//	Console.Out.Flush ();
-				//	return false;
-				//}
 				return true;
 			}
 			return false;
@@ -336,6 +352,7 @@ namespace Unix.Terminal {
 #pragma warning disable RCS1102 // Make class static.
 	internal class Delegates {
 #pragma warning restore RCS1102 // Make class static.
+#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 		public delegate IntPtr initscr ();
 		public delegate int endwin ();
 		public delegate bool isendwin ();
@@ -560,4 +577,5 @@ namespace Unix.Terminal {
 		}
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 }

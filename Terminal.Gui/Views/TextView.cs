@@ -387,7 +387,7 @@ namespace Terminal.Gui {
 						pos = new Point (col, i);
 						col += (textToReplace.Length - matchText.Length);
 					}
-					if (col + 1 > txt.Length) {
+					if (col < 0 || col + 1 > txt.Length) {
 						break;
 					}
 					col = txt.IndexOf (matchText, col + 1);
@@ -1654,11 +1654,8 @@ namespace Terminal.Gui {
 		public int BottomOffset {
 			get => bottomOffset;
 			set {
-				if (currentRow == Lines - 1 && bottomOffset > 0 && value == 0) {
-					topRow = Math.Max (topRow - bottomOffset, 0);
-				}
+				topRow = AdjustOffset (value);
 				bottomOffset = value;
-				Adjust ();
 			}
 		}
 
@@ -1669,11 +1666,8 @@ namespace Terminal.Gui {
 		public int RightOffset {
 			get => rightOffset;
 			set {
-				if (!wordWrap && currentColumn == GetCurrentLine ().Count && rightOffset > 0 && value == 0) {
-					leftColumn = Math.Max (leftColumn - rightOffset, 0);
-				}
+				leftColumn = AdjustOffset (value, false);
 				rightOffset = value;
-				Adjust ();
 			}
 		}
 
@@ -2033,6 +2027,16 @@ namespace Terminal.Gui {
 			Application.Driver.SetCursorVisibility (DesiredCursorVisibility);
 
 			return base.OnEnter (view);
+		}
+
+		///<inheritdoc/>
+		public override bool OnLeave (View view)
+		{
+			if (Application.MouseGrabView != null && Application.MouseGrabView == this) {
+				Application.UngrabMouse ();
+			}
+
+			return base.OnLeave (view);
 		}
 
 		// Returns an encoded region start..end (top 32 bits are the row, low32 the column)
@@ -2437,6 +2441,10 @@ namespace Terminal.Gui {
 
 			PositionCursor ();
 
+			if (clickWithSelecting) {
+				clickWithSelecting = false;
+				return;
+			}
 			if (SelectedLength > 0)
 				return;
 
@@ -2631,6 +2639,7 @@ namespace Terminal.Gui {
 				HistoryText.LineStatus.Replaced);
 
 			UpdateWrapModel ();
+			OnContentsChanged ();
 		}
 
 		// The column we are tracking, or -1 if we are not tracking any column
@@ -2667,8 +2676,10 @@ namespace Terminal.Gui {
 				need = true;
 			} else if ((wordWrap && leftColumn > 0) || (dSize.size + RightOffset < Frame.Width + offB.width
 				&& tSize.size + RightOffset < Frame.Width + offB.width)) {
-				leftColumn = 0;
-				need = true;
+				if (leftColumn > 0) {
+					leftColumn = 0;
+					need = true;
+				}
 			}
 
 			if (currentRow < topRow) {
@@ -2677,8 +2688,9 @@ namespace Terminal.Gui {
 			} else if (currentRow - topRow + BottomOffset >= Frame.Height + offB.height) {
 				topRow = Math.Min (Math.Max (currentRow - Frame.Height + 1 + BottomOffset, 0), currentRow);
 				need = true;
-			} else if (topRow > 0 && currentRow == topRow) {
+			} else if (topRow > 0 && currentRow < topRow) {
 				topRow = Math.Max (topRow - 1, 0);
+				need = true;
 			}
 			if (need) {
 				if (wrapNeeded) {
@@ -2691,6 +2703,30 @@ namespace Terminal.Gui {
 			}
 
 			OnUnwrappedCursorPosition ();
+		}
+
+		int AdjustOffset (int valueOffset, bool isRow = true)
+		{
+			var curWrap = isRow ? false : wordWrap;
+			var curLength = isRow ? Lines - 1 : GetCurrentLine ().Count;
+			var curStart = isRow ? topRow : leftColumn;
+			var curOffset = isRow ? bottomOffset : rightOffset;
+			var curSize = isRow ? Frame.Height - valueOffset : Frame.Width - valueOffset;
+			var newStart = curStart;
+
+			if (!curWrap) {
+				if (curStart > 0 && curOffset > 0 && valueOffset == 0) {
+					newStart = Math.Max (curStart - curOffset, 0);
+				} else if (curStart > 0 && curOffset == 0 && valueOffset > 0) {
+					newStart = Math.Max (Math.Min (curStart + valueOffset, curLength - curSize + 1), 0);
+				}
+
+				if (newStart != curStart) {
+					Application.MainLoop.Invoke (() => SetNeedsDisplay ());
+				}
+			}
+
+			return newStart;
 		}
 
 		/// <summary>
@@ -3533,6 +3569,7 @@ namespace Terminal.Gui {
 			}
 			if (DeleteTextForwards ()) {
 				UpdateWrapModel ();
+				OnContentsChanged ();
 
 				return;
 			}
@@ -3540,6 +3577,7 @@ namespace Terminal.Gui {
 			UpdateWrapModel ();
 
 			DoNeededAction ();
+			OnContentsChanged ();
 		}
 
 		/// <summary>
@@ -3564,11 +3602,13 @@ namespace Terminal.Gui {
 					HistoryText.LineStatus.Replaced);
 
 				UpdateWrapModel ();
+				OnContentsChanged ();
 
 				return;
 			}
 			if (DeleteTextBackwards ()) {
 				UpdateWrapModel ();
+				OnContentsChanged ();
 
 				return;
 			}
@@ -3576,6 +3616,7 @@ namespace Terminal.Gui {
 			UpdateWrapModel ();
 
 			DoNeededAction ();
+			OnContentsChanged ();
 		}
 
 		void MoveLeft ()
@@ -3955,6 +3996,8 @@ namespace Terminal.Gui {
 
 				historyText.Add (new List<List<Rune>> () { new List<Rune> (GetCurrentLine ()) }, CursorPosition,
 					HistoryText.LineStatus.Replaced);
+
+				SetNeedsDisplay ();
 				OnContentsChanged ();
 			} else {
 				if (selecting) {
@@ -3967,6 +4010,8 @@ namespace Terminal.Gui {
 					historyText.ReplaceLast (new List<List<Rune>> () { new List<Rune> (GetCurrentLine ()) }, CursorPosition,
 						HistoryText.LineStatus.Original);
 				}
+
+				SetNeedsDisplay ();
 			}
 			UpdateWrapModel ();
 			selecting = false;
@@ -4078,6 +4123,7 @@ namespace Terminal.Gui {
 			currentColumn = line.Count;
 			TrackColumn ();
 			PositionCursor ();
+			SetNeedsDisplay ();
 		}
 
 		/// <summary>
@@ -4091,6 +4137,7 @@ namespace Terminal.Gui {
 			leftColumn = 0;
 			TrackColumn ();
 			PositionCursor ();
+			SetNeedsDisplay ();
 		}
 
 		bool MoveNext (ref int col, ref int row, out Rune rune)
@@ -4269,6 +4316,7 @@ namespace Terminal.Gui {
 		}
 
 		bool isButtonShift;
+		bool clickWithSelecting;
 
 		///<inheritdoc/>
 		public override bool MouseEvent (MouseEvent ev)
@@ -4362,6 +4410,7 @@ namespace Terminal.Gui {
 				columnTrack = currentColumn;
 			} else if (ev.Flags.HasFlag (MouseFlags.Button1Pressed)) {
 				if (shiftSelecting) {
+					clickWithSelecting = true;
 					StopSelecting ();
 				}
 				ProcessMouseClick (ev, out _);
@@ -4447,16 +4496,6 @@ namespace Terminal.Gui {
 			line = r;
 		}
 
-		///<inheritdoc/>
-		public override bool OnLeave (View view)
-		{
-			if (Application.MouseGrabView != null && Application.MouseGrabView == this) {
-				Application.UngrabMouse ();
-			}
-
-			return base.OnLeave (view);
-		}
-
 		/// <summary>
 		/// Allows clearing the <see cref="HistoryText.HistoryTextItem"/> items updating the original text.
 		/// </summary>
@@ -4475,12 +4514,12 @@ namespace Terminal.Gui {
 	public class TextViewAutocomplete : Autocomplete {
 
 		///<inheritdoc/>
-		protected override string GetCurrentWord ()
+		protected override string GetCurrentWord (int columnOffset = 0)
 		{
 			var host = (TextView)HostControl;
 			var currentLine = host.GetCurrentLine ();
-			var cursorPosition = Math.Min (host.CurrentColumn, currentLine.Count);
-			return IdxToWord (currentLine, cursorPosition);
+			var cursorPosition = Math.Min (host.CurrentColumn + columnOffset, currentLine.Count);
+			return IdxToWord (currentLine, cursorPosition, columnOffset);
 		}
 
 		/// <inheritdoc/>
